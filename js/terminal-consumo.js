@@ -97,6 +97,8 @@ async function iniciarVistaConsumoDirecta() {
         }
 
         await asegurarDatosFabricacionTerminal();
+        poblarProveedoresTapas();
+        actualizarModoConsumoTapas();
         await cargarResumenFabricacionSemanalConsumo();
         sincronizarFiltrosConsumoDesdeLinea();
         await cargarPaletsConsumoEnSelector();
@@ -267,6 +269,8 @@ function mostrarConsumoDesdeLinea(fila) {
         setPantalla("vista_consumo", { pedido_id: ordenFabricacionActualId, fabricacion_semanal_id: lineaFabricacionActualId });
     }
     cargarTrazabilidadConsumo(lineaFabricacionActualId);
+    poblarProveedoresTapas();
+    actualizarModoConsumoTapas();
 }
 
 function sincronizarFiltrosConsumoDesdeLinea() {

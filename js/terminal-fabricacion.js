@@ -89,6 +89,7 @@ const terminalFabricacion = {
     palets: null,
     cubicaje: null,
     usuarios: null,
+    proveedores: null,
     puestos_trabajo: null,
     pedidos: null,
     consumos: null,
@@ -106,6 +107,7 @@ async function refrescarMaestrosFabricacion() {
         terminalFabricacion.palets = maestros?.palets || {};
         terminalFabricacion.cubicaje = maestros?.cubicaje || {};
         terminalFabricacion.usuarios = maestros?.usuarios || {};
+        terminalFabricacion.proveedores = maestros?.proveedores || {};
         terminalFabricacion.puestos_trabajo = maestros?.puestos_trabajo || {};
     } catch (err) {
         console.error("No se pudieron refrescar maestros:", err);
@@ -120,7 +122,8 @@ async function asegurarDatosFabricacionTerminal() {
         terminalFabricacion.materiales &&
         terminalFabricacion.tostados &&
         terminalFabricacion.ubicaciones &&
-        terminalFabricacion.usuarios
+        terminalFabricacion.usuarios &&
+        terminalFabricacion.proveedores
     ) return;
     try {
         const maestros = await wsRequest("maestros", {});
@@ -133,6 +136,7 @@ async function asegurarDatosFabricacionTerminal() {
         terminalFabricacion.palets = maestros?.palets || {};
         terminalFabricacion.cubicaje = maestros?.cubicaje || {};
         terminalFabricacion.usuarios = maestros?.usuarios || {};
+        terminalFabricacion.proveedores = maestros?.proveedores || {};
         terminalFabricacion.puestos_trabajo = maestros?.puestos_trabajo || {};
         const fabricacion = await wsRequest("fabricacion", {});
         terminalFabricacion.pedidos = fabricacion?.pedidos || {};
@@ -150,6 +154,7 @@ async function asegurarDatosFabricacionTerminal() {
         terminalFabricacion.palets = terminalFabricacion.palets || {};
         terminalFabricacion.cubicaje = terminalFabricacion.cubicaje || {};
         terminalFabricacion.usuarios = terminalFabricacion.usuarios || {};
+        terminalFabricacion.proveedores = terminalFabricacion.proveedores || {};
         terminalFabricacion.puestos_trabajo = terminalFabricacion.puestos_trabajo || {};
         terminalFabricacion.pedidos = terminalFabricacion.pedidos || {};
         terminalFabricacion.consumos = terminalFabricacion.consumos || {};
@@ -257,6 +262,7 @@ async function mostrarLineaFabricacion(fila) {
     }
     if (lineaFabricacionActualId) {
         cargarTrazabilidadFabricacion(lineaFabricacionActualId);
+        cargarPaletsTapas(lineaFabricacionActualId);
     }
 }
 
@@ -380,7 +386,8 @@ async function cargarTrazabilidadFabricacion(lineaId) {
         await asegurarDatosFabricacionTerminal();
         const trazas = (await wsRequest("listar_trazabilidad_fabricacion", {
             fabricacion_semanal_id: lineaId,
-            incluir_huerfanas: true,
+            // Código anterior: incluir_huerfanas: true,
+            incluir_compartidas: true,
         })) || [];
         lotesFabricacionTabla = agruparLotesFabricacion(trazas);
         actualizarResumenLotesFabricacion();
@@ -457,13 +464,13 @@ function resolverConsumoDuelaFabricacion(tipoBotaId) {
     const botaIdNum = Number(tipoBotaId || 0);
     if (!botaIdNum) return 0;
 
-    const consumoDuela = consumos.find((c) => {
-        if (Number(c?.bota_id || 0) !== botaIdNum) return false;
+    return consumos.reduce((total, c) => {
+        if (Number(c?.bota_id || 0) !== botaIdNum) return total;
         const tipoConsumible = tipos?.[Number(c?.consumible_id || 0)];
-        return String(tipoConsumible?.tipo || "").toUpperCase() === "DUELA";
-    });
-
-    return Number(consumoDuela?.consumo || 0) || 0;
+        return total + (String(tipoConsumible?.tipo || "").toUpperCase() === "DUELA"
+            ? Number(c?.consumo || 0) || 0
+            : 0);
+    }, 0);
 }
 
 function agruparLotesFabricacion(trazas) {
@@ -512,10 +519,16 @@ function agruparLotesFabricacion(trazas) {
 async function actualizarEstadoLoteFabricacion(lote, estado) {
     const grupo = lotesFabricacionTabla.find((item) => item.lote === lote);
     if (!grupo?.trazas?.length) return;
-    for (const traza of grupo.trazas) {
-        if (!traza?.id) continue;
-        await wsRequest("actualizar_estado_trazabilidad_fabricacion", { id: traza.id, estado });
-    }
+    // Código anterior, conservado para revertir:
+    // for (const traza of grupo.trazas) {
+    //     if (!traza?.id) continue;
+    //     await wsRequest("actualizar_estado_trazabilidad_fabricacion", { id: traza.id, estado });
+    // }
+    await wsRequest("actualizar_estado_lote_fabricacion_compartida", {
+        fabricacion_semanal_id: lineaFabricacionActualId,
+        lote,
+        estado,
+    });
 }
 
 function sincronizarBackdropModales() {
@@ -597,6 +610,11 @@ async function imprimirEtiquetaFabricarBotaDesdeUI() {
     const batidero = Number(document.getElementById("fabricar-bota-batidero")?.value || 0);
     const operarioFondadoId = Number(document.getElementById("fabricar-bota-operario-fondado")?.value || 0);
     const cantidad = Number(document.getElementById("fabricar-bota-cantidad-etiquetas")?.value || 0);
+    const paletTapasId = obtenerOrigenTapasSeleccionadoId();
+    if (!paletTapasId) {
+        alert("Debes seleccionar un origen de tapas.");
+        return;
+    }
     if (!lotesSeleccionados.length || !batidero || !operarioFondadoId || cantidad <= 0) {
         alert("Debes seleccionar al menos un lote, y completar batidero y operario de fondado.");
         return;
@@ -609,12 +627,14 @@ async function imprimirEtiquetaFabricarBotaDesdeUI() {
             operarios_ids: [operarioFondadoId],
             batidero,
             cantidad_etiquetas: cantidad,
+            palet_tapas_id: paletTapasId,
         };
         console.log("[fabricar-bota] enviando wsRequest imprimir_etiqueta_fabricacion", payload);
         const resp = await wsRequest("imprimir_etiqueta_fabricacion", payload);
         console.log("[fabricar-bota] respuesta wsRequest imprimir_etiqueta_fabricacion", resp);
 
         cargarTrazabilidadFabricacion(lineaFabricacionActualId);
+        cargarPaletsTapas(lineaFabricacionActualId);
         //cargarFabricacionSemanalActivaFabricacion();
         const cantidadInput = document.getElementById("fabricar-bota-cantidad-etiquetas");
         if (cantidadInput) {
@@ -835,10 +855,15 @@ async function imprimirEtiquetaFabricacion(operariosIds = [], cantidadEtiquetas 
         alert("Seleccione una linea de fabricacion.");
         return;
     }
+    if (!obtenerOrigenTapasSeleccionadoId()) {
+        alert("Debes seleccionar un origen de tapas.");
+        return;
+    }
     try {
         const trazas = (await wsRequest("listar_trazabilidad_fabricacion", {
             fabricacion_semanal_id: lineaFabricacionActualId,
-            incluir_huerfanas: true,
+            // Código anterior: incluir_huerfanas: true,
+            incluir_compartidas: true,
         })) || [];
         const activas = trazas.filter((t) => Number(t.estado || 0) === 0);
         if (!activas.length) {
@@ -855,9 +880,11 @@ async function imprimirEtiquetaFabricacion(operariosIds = [], cantidadEtiquetas 
             tipo: "BOTA",
             operarios_ids: operariosIds,
             cantidad_etiquetas: Math.max(1, Number.parseInt(String(cantidadEtiquetas), 10) || 1),
+            palet_tapas_id: obtenerOrigenTapasSeleccionadoId(),
         });
         console.log("Etiqueta creada:", resp);
         cargarTrazabilidadFabricacion(lineaFabricacionActualId);
+        cargarPaletsTapas(lineaFabricacionActualId);
         cargarFabricacionSemanalActivaFabricacion();
     } catch (err) {
         console.error(err);

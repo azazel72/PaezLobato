@@ -40,6 +40,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     prepararEventosRecepcion();
     prepararEventosConsumo();
+    prepararEventosTapas();
     prepararEventosFabricacion();
     prepararEventosCierreSemanal?.();
     prepararEventosDestino();
@@ -529,6 +530,9 @@ var ACCIONES = {
         ) {
             if (msg?.data?.refetch_maestros) {
                 refrescarMaestrosFabricacion?.();
+            }
+            if (msg?.data?.tabla === "palets_tapas" || msg?.data?.tabla === "trazabilidad_fabricacion") {
+                cargarPaletsTapas?.(pantallaActual === "vista_fabricacion" ? lineaFabricacionActualId : null);
             }
             if (pantallaActual === "vista_consumo") {
                 refrescarConsumoDesdeServidor?.(msg.data || {});

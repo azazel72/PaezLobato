@@ -42,6 +42,8 @@ def obtener_acciones() -> Dict[str, any]:
         "listar_trazabilidad_fabricacion": lambda ws, req: Colector.colector.listar_trazabilidad_fabricacion(
             (req.data or {}).get("fabricacion_semanal_id"),
             bool((req.data or {}).get("incluir_huerfanas")),
+            # Código anterior: la llamada terminaba tras incluir_huerfanas.
+            bool((req.data or {}).get("incluir_compartidas")),
         ),
         "obtener_cierre_semanal": lambda ws, req: Colector.colector.obtener_cierre_semanal(req.data.get("fabricacion_semanal_id")),
         "reasignar_consumo_negativo_cierre": lambda ws, req: Colector.colector.reasignar_consumo_negativo_cierre(req.data or {}),
@@ -52,10 +54,13 @@ def obtener_acciones() -> Dict[str, any]:
         "listar_palets_consumo": lambda ws, req: Colector.colector.listar_palets_consumo(),
         "listar_cubicaje": lambda ws, req: Colector.colector.listar_cubicaje(),
         "obtener_contexto_consumo": lambda ws, req: Colector.colector.obtener_contexto_consumo(req.data),
+        "listar_palets_tapas": lambda ws, req: Colector.colector.listar_palets_tapas(),
+        "agregar_palet_tapas_desde_stock": lambda ws, req: Colector.colector.agregar_palet_tapas_desde_stock(req.data or {}),
         "agregar_trazabilidad_fabricacion_desde_palet": lambda ws, req: Colector.colector.agregar_trazabilidad_fabricacion_desde_palet(req.data),
         "agregar_trazabilidad_fabricacion_desde_palet_stock": lambda ws, req: Colector.colector.agregar_trazabilidad_fabricacion_desde_palet_stock(req.data),
         "eliminar_trazabilidad_fabricacion": lambda ws, req: Colector.colector.eliminar_trazabilidad_fabricacion(req.data),
         "actualizar_estado_trazabilidad_fabricacion": lambda ws, req: Colector.colector.actualizar_estado_trazabilidad_fabricacion(req.data),
+        "actualizar_estado_lote_fabricacion_compartida": lambda ws, req: Colector.colector.actualizar_estado_lote_fabricacion_compartida(req.data or {}),
         "imprimir_etiqueta_fabricacion": lambda ws, req: Colector.colector.imprimir_etiqueta_fabricacion(req.data, ws),
         "listar_operarios_planificacion_fabricacion": lambda ws, req: Colector.colector.listar_operarios_planificacion_fabricacion(req.data or {}),
         "listar_botas_diarias": lambda ws, req: Colector.colector.listar_botas_diarias(req.data.get("fecha")),

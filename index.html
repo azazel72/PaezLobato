@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="./css/recepcion.css?v=20260828a" />
     <link rel="stylesheet" href="./css/paneles-fijos.css?v=20260828a" />
     <link rel="stylesheet" href="./css/ubicacion.css?v=20260828a" />
-    <link rel="stylesheet" href="./css/fabricacion.css?v=20260828a" />
+    <link rel="stylesheet" href="./css/fabricacion.css?v=20260904b" />
     <link rel="stylesheet" href="./css/expedicion.css?v=20260828a" />
     <link rel="stylesheet" href="./css/analiticas-envinado.css?v=20260828a" />
     <link rel="icon" type="image/png" href="./imagenes/iconos/tonel.png">
@@ -546,7 +546,7 @@
                         <div class="row g-3">
                             <div class="col-12 row g-2 align-items-center">
                                 <div class="col-4">
-                                    <label for="moverstock-tipo-producto" class="form-label mb-0">Duela</label>
+                                    <label for="moverstock-tipo-producto" class="form-label mb-0">Tipo de pieza</label>
                                 </div>
                                 <div class="col-8">
                                     <select class="form-select" id="moverstock-tipo-producto">
@@ -731,6 +731,18 @@
                 </div>
 
                 <div class="panel-fijo-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="consumo-destino-producto">Destino del consumo</label>
+                        <select class="form-select" id="consumo-destino-producto">
+                            <option value="botas">Botas</option>
+                            <option value="tapas">Tapas</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 d-none" id="consumo-proveedor-tapas-fila">
+                        <label class="form-label" for="consumo-proveedor-tapas">Proveedor de tapas</label>
+                        <select class="form-select" id="consumo-proveedor-tapas"><option value="">Seleccione proveedor...</option></select>
+                    </div>
+                    <div id="consumo-tapas-listado" class="d-none mb-3" aria-live="polite"></div>
                     <details id="consumo-resumen-fabricacion" class="consumo-resumen-fabricacion">
                         <summary>Fabricaciones semanales en producción (solo informativo)</summary>
                         <div id="consumo-resumen-fabricacion-lista" class="produccion-cards-list consumo-resumen-fabricacion-lista" aria-live="polite">
@@ -823,7 +835,7 @@
                                         <input type="number" step="1" min="1" class="form-control" id="consumo-paquetes" placeholder="1" value="1" disabled>
                                     </div>
                                 </div>
-                                <div class="col-12 row g-2 align-items-center">
+                                <div class="col-12 row g-2 align-items-center" id="consumo-lote-fila">
                                     <div class="col-4">
                                         <label class="form-label mb-0" for="consumo-lote">Lote</label>
                                     </div>
@@ -863,6 +875,9 @@
                     <button class="btn btn-outline-primary w-100 d-none" type="button" id="consumo-palet-agregar-trazabilidad">
                         <i class="bi bi-plus-lg"></i> Agregar consumo
                     </button>
+                    <button class="btn btn-outline-primary w-100 d-none" type="button" id="consumo-tapas-agregar">
+                        <i class="bi bi-plus-lg"></i> Agregar a origen de tapas
+                    </button>
                 </div>
             </div>
         </section>
@@ -896,6 +911,15 @@
                         </summary>
                         <div class="panel-botas-trazas-lista" id="lista_trazabilidad_botas" aria-live="polite">
                             <div class="panel-botas-trazas-vacio">Cargando lotes...</div>
+                        </div>
+                    </details>
+                    <details class="panel-botas-trazas">
+                        <summary>
+                            <span>Ver listado de tapas</span>
+                            <span class="panel-botas-trazas-resumen" id="resumen_origen_tapas"></span>
+                        </summary>
+                        <div class="panel-botas-trazas-lista" id="fabricar-bota-tapas-listado" aria-live="polite">
+                            <div class="panel-botas-trazas-vacio">Cargando orígenes de tapas...</div>
                         </div>
                     </details>
                     <div class="row g-3 align-items-end mt-1">
@@ -1364,8 +1388,9 @@
     <script src="./js/shared-auth-token.js?v=20260828a"></script>
     <script src="./js/terminal-auth.js?v=20260828a"></script>
     <script src="./js/terminal-recepcion.js?v=20260828a"></script>
-    <script src="./js/terminal-consumo.js?v=20260828a"></script>
-    <script src="./js/terminal-fabricacion.js?v=20260828a"></script>
+    <script src="./js/terminal-consumo.js?v=20260920a"></script>
+    <script src="./js/terminal-fabricacion.js?v=20260921c"></script>
+    <script src="./js/terminal-tapas.js?v=20260920b"></script>
     <script src="./js/terminal-cierre-semanal.js?v=20260904e"></script>
     <script src="./js/terminal-productos-destino.js?v=20260828a"></script>
     <script src="./js/terminal-destino.js?v=20260828a"></script>
@@ -1378,7 +1403,7 @@
     <script src="./js/terminal-ambientes.js?v=20260828a"></script>
     <script src="./js/terminal-botas-diarias.js?v=20260828a"></script>
     <script src="./js/terminal-buscar-botas.js?v=20260828a"></script>
-    <script src="./js/terminal.js?v=20260828a"></script>
+    <script src="./js/terminal.js?v=20260920a"></script>
 
 </body>
 

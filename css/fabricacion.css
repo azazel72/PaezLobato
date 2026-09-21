@@ -226,8 +226,14 @@
 }
 
 .produccion-card-date {
-    font-size: 0.8rem;
-    color: #6b7280;
+    padding: 0.28rem 0.55rem;
+    border: 1px solid #b9d8d2;
+    border-radius: 999px;
+    background: #eaf6f3;
+    color: #17675c;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.2;
     white-space: nowrap;
 }
 
@@ -529,8 +535,14 @@
 }
 
 .fabricacion-card-date {
-    font-size: 0.8rem;
-    color: #6b7280;
+    padding: 0.28rem 0.55rem;
+    border: 1px solid #b9d8d2;
+    border-radius: 999px;
+    background: #eaf6f3;
+    color: #17675c;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.2;
     white-space: nowrap;
 }
 

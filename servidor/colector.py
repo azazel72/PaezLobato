@@ -833,24 +833,91 @@ class Colector:
             ))
             return items
 
-    def listar_trazabilidad_fabricacion(self, fabricacion_semanal_id: int | None, incluir_huerfanas: bool = False):
+    def _palets_elegibles_fabricacion_compartida(self, session: Session, trazas, fabricacion_semanal_id: int) -> set[int]:
+        linea_id = int(fabricacion_semanal_id or 0)
+        otras_lineas_ids = {
+            int(traza.fabricacion_semanal_id)
+            for traza in trazas
+            if traza.fabricacion_semanal_id is not None
+            and int(traza.fabricacion_semanal_id) != linea_id
+        }
+        otras_lineas_no_finalizadas = set()
+        if otras_lineas_ids:
+            otras_lineas_no_finalizadas = {
+                int(linea.id)
+                for linea in session.exec(
+                    select(FabricacionSemanalDB).where(
+                        FabricacionSemanalDB.id.in_(otras_lineas_ids),
+                        or_(FabricacionSemanalDB.estado.is_(None), FabricacionSemanalDB.estado != 3),
+                    )
+                ).all()
+            }
+        return {
+            int(traza.palet_id)
+            for traza in trazas
+            if traza.palet_id and (
+                traza.fabricacion_semanal_id is None
+                or int(traza.fabricacion_semanal_id) == linea_id
+                or int(traza.fabricacion_semanal_id) in otras_lineas_no_finalizadas
+            )
+        }
+
+    # Firma anterior: def listar_trazabilidad_fabricacion(self, fabricacion_semanal_id: int | None, incluir_huerfanas: bool = False):
+    def listar_trazabilidad_fabricacion(self, fabricacion_semanal_id: int | None, incluir_huerfanas: bool = False, incluir_compartidas: bool = False):
         with DB.crear_sesion() as session:
             statement = select(TrazabilidadFabricacionDB)
-            if fabricacion_semanal_id:
-                if incluir_huerfanas:
-                    statement = statement.where(
-                        or_(
-                            TrazabilidadFabricacionDB.fabricacion_semanal_id == fabricacion_semanal_id,
-                            TrazabilidadFabricacionDB.fabricacion_semanal_id.is_(None),
+            # Código anterior del listado de Fabricar botas, conservado para revertir:
+            # if fabricacion_semanal_id:
+            #     if incluir_huerfanas:
+            #         statement = statement.where(
+            #             or_(
+            #                 TrazabilidadFabricacionDB.fabricacion_semanal_id == fabricacion_semanal_id,
+            #                 TrazabilidadFabricacionDB.fabricacion_semanal_id.is_(None),
+            #             )
+            #         )
+            #     else:
+            #         statement = statement.where(
+            #             TrazabilidadFabricacionDB.fabricacion_semanal_id == fabricacion_semanal_id
+            #         )
+            # else:
+            #     statement = statement.where(TrazabilidadFabricacionDB.fabricacion_semanal_id.is_(None))
+            if not incluir_compartidas:
+                if fabricacion_semanal_id:
+                    if incluir_huerfanas:
+                        statement = statement.where(
+                            or_(
+                                TrazabilidadFabricacionDB.fabricacion_semanal_id == fabricacion_semanal_id,
+                                TrazabilidadFabricacionDB.fabricacion_semanal_id.is_(None),
+                            )
                         )
-                    )
+                    else:
+                        statement = statement.where(
+                            TrazabilidadFabricacionDB.fabricacion_semanal_id == fabricacion_semanal_id
+                        )
                 else:
-                    statement = statement.where(
-                        TrazabilidadFabricacionDB.fabricacion_semanal_id == fabricacion_semanal_id
-                    )
-            else:
-                statement = statement.where(TrazabilidadFabricacionDB.fabricacion_semanal_id.is_(None))
+                    statement = statement.where(TrazabilidadFabricacionDB.fabricacion_semanal_id.is_(None))
             trazas = session.exec(statement).all()
+            if incluir_compartidas:
+                palets_elegibles = self._palets_elegibles_fabricacion_compartida(session, trazas, fabricacion_semanal_id)
+                # Antes se agrupaban todas las trazas, incluidas las de otras fabricaciones finalizadas:
+                # trazas_por_palet = {}
+                # for traza in trazas:
+                #     trazas_por_palet.setdefault(traza.palet_id, []).append(traza)
+                trazas = [traza for traza in trazas if traza.palet_id in palets_elegibles]
+                trazas_por_palet = {}
+                for traza in trazas:
+                    trazas_por_palet.setdefault(traza.palet_id, []).append(traza)
+                registros = []
+                for trazas_palet in trazas_por_palet.values():
+                    propias = [traza for traza in trazas_palet if traza.fabricacion_semanal_id == fabricacion_semanal_id]
+                    representante = (propias[0] if propias else trazas_palet[0])
+                    registros.append((
+                        representante,
+                        0 if any(int(traza.estado or 0) == 0 for traza in propias) else 1,
+                        sum(int(traza.cantidad_fabricada or 0) for traza in trazas_palet),
+                    ))
+            else:
+                registros = [(traza, traza.estado, traza.cantidad_fabricada) for traza in trazas]
             palet_ids = {t.palet_id for t in trazas if t.palet_id}
             palet_map = {}
             material_ids = set()
@@ -892,10 +959,13 @@ class Colector:
                         "descripcion",
                         None,
                     ),
-                    "cantidad_fabricada": t.cantidad_fabricada,
-                    "estado": t.estado,
+                    # Código anterior: "cantidad_fabricada": t.cantidad_fabricada,
+                    # Código anterior: "estado": t.estado,
+                    "cantidad_fabricada": cantidad_fabricada,
+                    "estado": estado,
                 }
-                for t in trazas
+                # Código anterior: for t in trazas
+                for t, estado, cantidad_fabricada in registros
             ]
 
     def obtener_cierre_semanal(self, fabricacion_semanal_id: int):
@@ -925,8 +995,7 @@ class Colector:
             for consumo in consumos:
                 tipo_consumible = tipos_consumibles.get(int(consumo.consumible_id or 0))
                 if str(getattr(tipo_consumible, "tipo", "")).strip().upper() == "DUELA":
-                    consumo_bota = float(consumo.consumo or 0)
-                    break
+                    consumo_bota += float(consumo.consumo or 0)
 
             trazas = session.exec(
                 select(TrazabilidadFabricacionDB).where(
@@ -1066,7 +1135,7 @@ class Colector:
         if not tipo_producto_id:
             return 0.0
         consumos = session.exec(
-            select(ConsumoDB).where(ConsumoDB.bota_id == int(tipo_producto_id))
+            select(ConsumoDB).where(ConsumoDB.bota_id == int(tipo_producto_id)).order_by(ConsumoDB.id)
         ).all()
         consumible_ids = [int(c.consumible_id or 0) for c in consumos if c.consumible_id]
         tipos_consumibles = {}
@@ -1078,11 +1147,11 @@ class Colector:
                 ).all()
                 if item.id
             }
-        for consumo in consumos:
-            tipo_consumible = tipos_consumibles.get(int(consumo.consumible_id or 0))
-            if str(getattr(tipo_consumible, "tipo", "")).strip().upper() == "DUELA":
-                return float(consumo.consumo or 0)
-        return 0.0
+        return sum(
+            float(consumo.consumo or 0)
+            for consumo in consumos
+            if str(getattr(tipos_consumibles.get(int(consumo.consumible_id or 0)), "tipo", "")).strip().upper() == "DUELA"
+        )
 
     def _obtener_estado_fabricacion_finalizado_session(self, session: Session) -> EstadoFabricacionSemanalDB:
         estado = session.exec(
@@ -2113,6 +2182,88 @@ class Colector:
                 "cubicaje_estandar": cubicaje_estandar,
             }
 
+    def listar_palets_tapas(self):
+        with DB.crear_sesion() as session:
+            palets = session.exec(
+                select(PaletDB).where(
+                    PaletDB.codigo.endswith("#tapas"),
+                    PaletDB.procesado.is_(True),
+                    PaletDB.linea_entrada_id.is_(None),
+                ).order_by(PaletDB.codigo)
+            ).all()
+            return [
+                {
+                    "id": palet.id,
+                    "codigo": palet.codigo,
+                    "cubicaje": float(palet.cubicaje or 0),
+                    "consumido": float(palet.consumido or 0),
+                    "restante": float(palet.cubicaje or 0) - float(palet.consumido or 0),
+                }
+                for palet in palets
+            ]
+
+    def agregar_palet_tapas_desde_stock(self, data):
+        proveedor_id = int(data.get("proveedor_id") or 0)
+        palet_origen_id = int(data.get("palet_origen_id") or 0)
+        lote_palet = str(data.get("lote_palet") or "").strip()
+        cubicaje = float(data.get("cubicaje") or 0)
+        paquetes = int(data.get("paquetes") or 1)
+        volumen = cubicaje * paquetes
+        if not proveedor_id or (not palet_origen_id and not lote_palet) or cubicaje <= 0 or paquetes < 1:
+            raise ValueError("Proveedor, palet origen, cubicaje y paquetes válidos son obligatorios.")
+
+        with DB.crear_sesion() as session:
+            with session.begin():
+                proveedor = session.exec(
+                    select(ProveedorDB).where(ProveedorDB.id == proveedor_id).with_for_update()
+                ).first()
+                consulta_origen = select(PaletDB)
+                consulta_origen = consulta_origen.where(
+                    PaletDB.id == palet_origen_id if palet_origen_id else PaletDB.codigo == lote_palet
+                ).with_for_update()
+                origen = session.exec(consulta_origen).first()
+                if not proveedor or not str(proveedor.nombre or "").strip():
+                    raise ValueError("Proveedor no encontrado.")
+                if not origen or (palet_origen_id and (origen.linea_entrada_id is not None or bool(origen.procesado))):
+                    raise ValueError("El palet origen no está disponible.")
+                if volumen > float(origen.cubicaje or 0) - float(origen.consumido or 0) + 0.000001:
+                    raise ValueError("El cubicaje solicitado supera el restante del palet origen.")
+
+                codigo = f"{proveedor.nombre.strip()}#tapas"
+                if origen.codigo == codigo:
+                    raise ValueError("El palet de tapas no puede ser su propio origen.")
+                if len(codigo) > 60:
+                    raise ValueError("El nombre del proveedor es demasiado largo para el código del palet de tapas.")
+                destino = session.exec(select(PaletDB).where(PaletDB.codigo == codigo)).first()
+                if destino:
+                    if not destino.procesado or destino.linea_entrada_id is not None:
+                        raise ValueError("El código de tapas ya está usado por otro palet.")
+                    destino.cubicaje = float(destino.cubicaje or 0) + volumen
+                else:
+                    destino = PaletDB(
+                        codigo=codigo,
+                        linea_entrada_id=None,
+                        tipo_producto_id=origen.tipo_producto_id,
+                        material_id=origen.material_id,
+                        cubicaje=volumen,
+                        consumido=0.0,
+                        estado=1,
+                        ubicacion_id=origen.ubicacion_id,
+                        procesado=True,
+                    )
+                    session.add(destino)
+                    session.flush()
+                if float(destino.cubicaje or 0) > float(destino.consumido or 0):
+                    destino.estado = 1
+                origen.consumido = float(origen.consumido or 0) + volumen
+                session.add(origen)
+                session.add(destino)
+                session.add(TrazabilidadProcesadoDB(
+                    palet_origen_id=origen.id,
+                    palet_destino_id=destino.id,
+                ))
+            return {"id": destino.id, "codigo": destino.codigo, "cubicaje": destino.cubicaje}
+
     def agregar_trazabilidad_fabricacion(self, session: Session, fabricacion_semanal_id: int | None, palet: PaletDB):
         statement = select(TrazabilidadFabricacionDB).where(TrazabilidadFabricacionDB.palet_id == palet.id)
         if fabricacion_semanal_id:
@@ -2445,6 +2596,51 @@ class Colector:
                 "estado": trazabilidad.estado,
             }
 
+    def actualizar_estado_lote_fabricacion_compartida(self, data):
+        linea_id = int(data.get("fabricacion_semanal_id") or 0)
+        lote = self._normalizar_lote_traza(data.get("lote"))
+        estado = int(data.get("estado"))
+        if not linea_id or not lote or estado not in (0, 1):
+            raise ValueError("Fabricación semanal, lote y estado válidos son obligatorios.")
+
+        with DB.crear_sesion() as session:
+            with session.begin():
+                linea = session.exec(
+                    select(FabricacionSemanalDB).where(FabricacionSemanalDB.id == linea_id).with_for_update()
+                ).first()
+                if not linea:
+                    raise ValueError("Línea de fabricación no encontrada.")
+                trazas = session.exec(select(TrazabilidadFabricacionDB)).all()
+                # Antes se incluían todos los palets trazados, incluso los de otras fabricaciones finalizadas:
+                # palet_ids = {int(traza.palet_id) for traza in trazas if traza.palet_id}
+                palet_ids = self._palets_elegibles_fabricacion_compartida(session, trazas, linea_id)
+                palets = session.exec(select(PaletDB).where(PaletDB.id.in_(palet_ids))).all() if palet_ids else []
+                palets_lote = [
+                    palet for palet in palets
+                    if self._extraer_prefijo_lote(palet.codigo) == lote
+                ]
+                if not palets_lote:
+                    raise ValueError("No hay palets en trazabilidad para el lote seleccionado.")
+
+                propias = {}
+                for traza in trazas:
+                    if traza.fabricacion_semanal_id == linea_id and traza.palet_id:
+                        propias.setdefault(int(traza.palet_id), []).append(traza)
+                for palet in palets_lote:
+                    trazas_propias = propias.get(int(palet.id), [])
+                    if trazas_propias:
+                        for propia in trazas_propias:
+                            propia.estado = estado
+                            session.add(propia)
+                    elif estado == 0:
+                        session.add(TrazabilidadFabricacionDB(
+                            fabricacion_semanal_id=linea_id,
+                            palet_id=palet.id,
+                            cantidad_fabricada=0,
+                            estado=0,
+                        ))
+            return {"fabricacion_semanal_id": linea_id, "lote": lote, "estado": estado}
+
     def imprimir_etiqueta_fabricacion(self, data, ws=None):
         trazabilidad_ids = data.get("trazabilidad_ids") or []
         fabricacion_semanal_id = data.get("fabricacion_semanal_id")
@@ -2453,6 +2649,7 @@ class Colector:
         cantidad_etiquetas = int(data.get("cantidad_etiquetas") or 1)
         operarios_ids_input = data.get("operarios_ids") or []
         batidero = data.get("batidero")
+        palet_tapas_id = int(data.get("palet_tapas_id") or 0)
         if not isinstance(operarios_ids_input, list):
             operarios_ids_input = [operarios_ids_input]
         operarios_ids_producto = self._normalizar_ids_operarios(operarios_ids_input)
@@ -2479,6 +2676,8 @@ class Colector:
         if tipo == "BOTA":
             if not fabricacion_semanal_id:
                 raise ValueError("fabricacion_semanal_id es obligatorio.")
+            if not palet_tapas_id:
+                raise ValueError("Debe seleccionar un origen de tapas.")
             if not isinstance(lotes, list) or not lotes_normalizados:
                 raise ValueError("Debe seleccionar al menos un lote.")
             if batidero_id is None:
@@ -2516,13 +2715,15 @@ class Colector:
                             session,
                             int(fabricacion_semanal_id),
                             lotes_normalizados,
-                            incluir_huerfanas=True,
+                            # Código anterior: incluir_huerfanas=True,
+                            incluir_huerfanas=False,
                         )
-                        for grupo in grupos_trazas_palets_lote:
-                            for traza, _palet in grupo["trazas_palets"]:
-                                if traza.fabricacion_semanal_id is None:
-                                    traza.fabricacion_semanal_id = int(fabricacion_semanal_id)
-                                    session.add(traza)
+                        # Código anterior, conservado para revertir:
+                        # for grupo in grupos_trazas_palets_lote:
+                        #     for traza, _palet in grupo["trazas_palets"]:
+                        #         if traza.fabricacion_semanal_id is None:
+                        #             traza.fabricacion_semanal_id = int(fabricacion_semanal_id)
+                        #             session.add(traza)
                         trazas = [
                             traza
                             for grupo in grupos_trazas_palets_lote
@@ -2561,10 +2762,16 @@ class Colector:
 
                     codigos_generados = []
                     ultimo_producto_id = None
-                    consumo_duela = None
+                    consumo_duela = 0.0
+                    consumo_fondos = 0.0
                     consumos_fleje = []
                     if tipo == "BOTA" and linea_ref:
-                        consumo_duela, consumos_fleje = self._obtener_receta_bota(session, linea_ref.tipo_producto_id)
+                        consumo_duela, consumo_fondos, consumos_fleje = self._obtener_receta_bota(session, linea_ref.tipo_producto_id)
+                    palet_tapas = None
+                    if tipo == "BOTA" and palet_tapas_id:
+                        palet_tapas = session.get(PaletDB, palet_tapas_id)
+                        if not palet_tapas or not str(palet_tapas.codigo or "").endswith("#tapas") or not palet_tapas.procesado:
+                            raise ValueError("El origen de tapas seleccionado no es válido.")
 
                     lotes_origenes = lotes_normalizados if tipo == "BOTA" else palet_codigos
 
@@ -2592,8 +2799,10 @@ class Colector:
                             trazas_producto = self._consumir_duela_bota_desde_trazas(
                                 session,
                                 grupos_trazas_palets_lote,
-                                float(consumo_duela.consumo or 0),
+                                consumo_duela,
                             )
+                            if palet_tapas:
+                                self._consumir_tapas_bota(session, palet_tapas, consumo_fondos)
                             for consumo_fleje in consumos_fleje:
                                 self._consumir_flejes_seleccionados(
                                     session,
@@ -2748,6 +2957,8 @@ class Colector:
             select(PaletDB)
             .where(PaletDB.id.in_(palet_ids))
             .order_by(PaletDB.codigo, PaletDB.id)
+            # Código anterior: sin .with_for_update()
+            .with_for_update()
         ).all() if palet_ids else []
         palets_por_id = {p.id: p for p in palets}
 
@@ -2796,7 +3007,7 @@ class Colector:
 
     def _obtener_receta_bota(self, session, tipo_producto_id: int):
         consumos = session.exec(
-            select(ConsumoDB).where(ConsumoDB.bota_id == tipo_producto_id)
+            select(ConsumoDB).where(ConsumoDB.bota_id == tipo_producto_id).order_by(ConsumoDB.id)
         ).all()
         if not consumos:
             raise ValueError("La bota no tiene receta de consumos.")
@@ -2808,14 +3019,28 @@ class Colector:
         tipos_por_id = {tp.id: str(tp.tipo or "").upper() for tp in tipos_db}
 
         consumos_duela = [c for c in consumos if tipos_por_id.get(c.consumible_id) == "DUELA"]
+        consumos_fondos = [c for c in consumos if tipos_por_id.get(c.consumible_id) in ("FONDO", "FONDOS")]
         consumos_fleje = [c for c in consumos if tipos_por_id.get(c.consumible_id) == "FLEJE"]
+
+        consumo_duela = sum(float(c.consumo or 0) for c in consumos_duela)
+        consumo_fondos = sum(float(c.consumo or 0) for c in consumos_fondos)
+        if consumo_duela <= 0:
+            raise ValueError("La bota no tiene un consumo de DUELA mayor que cero en Consumos.")
+        if consumo_fondos <= 0:
+            raise ValueError("La bota no tiene un consumo de FONDO mayor que cero en Consumos para descontar tapas.")
 
         # if len(consumos_duela) != 1:
         #     raise ValueError("La receta de la bota debe tener exactamente una duela.")
         # if len(consumos_fleje) != 2:
         #     raise ValueError("La receta de la bota debe tener exactamente dos flejes.")
 
-        return consumos_duela[0], consumos_fleje
+        return consumo_duela, consumo_fondos, consumos_fleje
+
+    def _consumir_tapas_bota(self, session, palet_tapas: PaletDB, consumo_fondos: float):
+        palet_tapas.consumido = float(palet_tapas.consumido or 0) + 2 * consumo_fondos
+        if float(palet_tapas.consumido or 0) >= float(palet_tapas.cubicaje or 0):
+            palet_tapas.estado = 2
+        session.add(palet_tapas)
 
     def _consumir_duela_bota_desde_trazas(self, session, grupos_trazas_palets, consumo_unitario: float):
         if not grupos_trazas_palets:
@@ -3724,9 +3949,10 @@ class Colector:
         fechas = self._ultimos_dias_laborables(dias_previos=dias_previos)
         fechas_set = set(fechas)
         with DB.crear_sesion() as session:
-            puestos = session.exec(
-                select(PuestoTrabajoDB).where(PuestoTrabajoDB.fabricacion == True)  # noqa: E712
-            ).all()
+            consulta_puestos = select(PuestoTrabajoDB)
+            if not puesto_nombre:
+                consulta_puestos = consulta_puestos.where(PuestoTrabajoDB.fabricacion == True)  # noqa: E712
+            puestos = session.exec(consulta_puestos).all()
             if puesto_nombre:
                 puestos = [p for p in puestos if (p.nombre or "").strip().upper() == puesto_nombre]
             puestos_map = {p.id: p for p in puestos}
