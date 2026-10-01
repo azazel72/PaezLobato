@@ -1,5 +1,6 @@
 async function POST(url, body = {}) {
     try {
+    console.info("[php] POST", url, body);
         const token = window.SharedAuthToken?.getToken?.();
         const res = await fetch(url, {
             method:"POST",
@@ -11,7 +12,9 @@ async function POST(url, body = {}) {
             body: JSON.stringify(body)
         });
         if (!res.ok) throw new Error(await res.text());
-        return await res.json();
+        const data = await res.json();
+        console.info("[php] POST respuesta", url, data);
+        return data;
     } catch (error) {
         console.error("Error en la petición POST:", error);
     }
@@ -19,6 +22,7 @@ async function POST(url, body = {}) {
 
 async function GET(url) {
     try {
+    console.info("[php] GET", url);
         const token = window.SharedAuthToken?.getToken?.();
         const res = await fetch(url, {
             method:"GET",
@@ -26,7 +30,9 @@ async function GET(url) {
             headers: token ? { "Authorization": `Bearer ${token}` } : undefined,
         });
         if (!res.ok) throw new Error(await res.text());
-        return await res.json();
+        const data = await res.json();
+        console.info("[php] GET respuesta", url, data);
+        return data;
     } catch {
         throw new Error("Error de conexión al servidor");
     }

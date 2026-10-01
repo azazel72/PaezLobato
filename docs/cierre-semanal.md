@@ -7,9 +7,9 @@ La vista `Cierre semanal` sirve para analizar una línea de `fabricacion_semanal
 - control de producción
 - control de consumo
 
-Se accede desde las cards de:
+Se accede desde:
 
-- `vista_fabricacion_semanal`
+- El botón `Cierre semanal` de `vista_fabricacion`, tras seleccionar una fabricación.
 - `vista_consumo_semanal`
 
 La vista es común para ambos flujos y siempre trabaja sobre un `fabricacion_semanal_id`.
@@ -24,7 +24,7 @@ La vista es común para ambos flujos y siempre trabaja sobre un `fabricacion_sem
 
 ## Entrada funcional
 
-Cada botón `Cierre semanal` de las cards llama a:
+El botón `Cierre semanal` llama a:
 
 - `abrirVistaCierreSemanalDesdeLinea(lineaId, origenVista)`
 

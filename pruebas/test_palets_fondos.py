@@ -10,7 +10,7 @@ from servidor.modelos import ConsumoDB, PaletDB, ProveedorDB, TipoProductoDB, Tr
 from servidor.persistencia import DB
 
 
-class PaletsTapasTests(unittest.TestCase):
+class PaletsFondosTests(unittest.TestCase):
     def setUp(self):
         self.engine = create_engine("sqlite://")
         SQLModel.metadata.create_all(self.engine, tables=[
@@ -31,12 +31,12 @@ class PaletsTapasTests(unittest.TestCase):
 
     def test_acumula_en_un_solo_palet_y_muestra_saldo_negativo(self):
         for volumen in (2, 3):
-            self.colector.agregar_palet_tapas_desde_stock({
+            self.colector.agregar_palet_fondos_desde_stock({
                 "proveedor_id": 1, "palet_origen_id": 10, "cubicaje": volumen, "paquetes": 1,
             })
         with Session(self.engine) as session:
             origen = session.get(PaletDB, 10)
-            destinos = session.exec(select(PaletDB).where(PaletDB.codigo == "Proveedor Uno#tapas")).all()
+            destinos = session.exec(select(PaletDB).where(PaletDB.codigo == "Proveedor Uno#fondos")).all()
             trazas = session.exec(select(TrazabilidadProcesadoDB)).all()
             self.assertEqual(origen.consumido, 5)
             self.assertEqual(len(destinos), 1)
@@ -45,31 +45,31 @@ class PaletsTapasTests(unittest.TestCase):
             destinos[0].consumido = 6
             session.add(destinos[0])
             session.commit()
-        self.assertEqual(self.colector.listar_palets_tapas()[0]["restante"], -1)
+        self.assertEqual(self.colector.listar_palets_fondos()[0]["restante"], -1)
 
     def test_cada_bota_descuenta_dos_veces_el_consumo_de_fondos(self):
         with Session(self.engine) as session:
-            palet = PaletDB(codigo="Proveedor Uno#tapas", cubicaje=1, consumido=0, procesado=True)
+            palet = PaletDB(codigo="Proveedor Uno#fondos", cubicaje=1, consumido=0, procesado=True)
             session.add(palet)
             session.commit()
-            self.colector._consumir_tapas_bota(session, palet, 0.6)
+            self.colector._consumir_fondos_bota(session, palet, 0.6)
             session.commit()
-        self.assertAlmostEqual(self.colector.listar_palets_tapas()[0]["restante"], -0.2)
+        self.assertAlmostEqual(self.colector.listar_palets_fondos()[0]["restante"], -0.2)
 
     def test_acepta_un_palet_existente_por_codigo(self):
         with Session(self.engine) as session:
             session.add(PaletDB(codigo="PALET-1", cubicaje=4, consumido=0, procesado=True))
             session.commit()
-        self.colector.agregar_palet_tapas_desde_stock({
+        self.colector.agregar_palet_fondos_desde_stock({
             "proveedor_id": 1, "lote_palet": "PALET-1", "cubicaje": 1.5,
         })
         with Session(self.engine) as session:
             origen = session.exec(select(PaletDB).where(PaletDB.codigo == "PALET-1")).one()
             self.assertEqual(origen.consumido, 1.5)
-        self.assertEqual(self.colector.listar_palets_tapas()[0]["cubicaje"], 1.5)
+        self.assertEqual(self.colector.listar_palets_fondos()[0]["cubicaje"], 1.5)
 
-    def test_no_fabrica_bota_sin_origen_de_tapas(self):
-        with self.assertRaisesRegex(ValueError, "origen de tapas"):
+    def test_impresion_rechaza_el_payload_antiguo_de_fabricacion(self):
+        with self.assertRaisesRegex(ValueError, "lista de codigos"):
             self.colector.imprimir_etiqueta_fabricacion({
                 "fabricacion_semanal_id": 1,
                 "lotes": ["LOTE0001"],
@@ -114,9 +114,9 @@ class PaletsTapasTests(unittest.TestCase):
     def test_una_bota_aplica_ambas_sumas_a_sus_palets(self):
         with Session(self.engine) as session:
             duela = PaletDB(codigo="DUELA", cubicaje=10, consumido=0, procesado=True)
-            tapas = PaletDB(codigo="Proveedor Uno#tapas", cubicaje=10, consumido=0, procesado=True)
+            fondos = PaletDB(codigo="Proveedor Uno#fondos", cubicaje=10, consumido=0, procesado=True)
             session.add(duela)
-            session.add(tapas)
+            session.add(fondos)
             session.flush()
             traza = TrazabilidadFabricacionDB(palet_id=duela.id, estado=0)
             session.add(traza)
@@ -124,10 +124,10 @@ class PaletsTapasTests(unittest.TestCase):
             self.colector._consumir_duela_bota_desde_trazas(
                 session, [{"lote": "DUELA", "trazas_palets": [(traza, duela)]}], 0.32,
             )
-            self.colector._consumir_tapas_bota(session, tapas, 0.25)
+            self.colector._consumir_fondos_bota(session, fondos, 0.25)
             session.commit()
             self.assertAlmostEqual(duela.consumido, 0.32)
-            self.assertAlmostEqual(tapas.consumido, 0.5)
+            self.assertAlmostEqual(fondos.consumido, 0.5)
 
 
 if __name__ == "__main__":

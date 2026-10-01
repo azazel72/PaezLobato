@@ -1,43 +1,43 @@
-let origenTapasLineaId = null;
-let origenTapasSeleccionManual = false;
-let origenTapasSeleccionadoId = null;
-let paletsTapasFabricacion = [];
+let origenFondosLineaId = null;
+let origenFondosSeleccionManual = false;
+let origenFondosSeleccionadoId = null;
+let paletsFondosFabricacion = [];
 
-function prepararEventosTapas() {
-    document.getElementById("consumo-destino-producto")?.addEventListener("change", actualizarModoConsumoTapas);
-    document.getElementById("consumo-tapas-agregar")?.addEventListener("click", agregarConsumoTapas);
-    document.getElementById("consumo-panel-tabs")?.addEventListener("shown.bs.tab", actualizarModoConsumoTapas);
-    document.getElementById("fabricar-bota-tapas-listado")?.addEventListener("click", (event) => {
-        const tarjeta = event.target.closest("[data-palet-tapas-id]");
+function prepararEventosFondos() {
+    document.getElementById("consumo-destino-producto")?.addEventListener("change", actualizarModoConsumoFondos);
+    document.getElementById("consumo-fondos-agregar")?.addEventListener("click", agregarConsumoFondos);
+    document.getElementById("consumo-panel-tabs")?.addEventListener("shown.bs.tab", actualizarModoConsumoFondos);
+    document.getElementById("fabricar-bota-fondos-listado")?.addEventListener("click", (event) => {
+        const tarjeta = event.target.closest("[data-palet-fondos-id]");
         if (!tarjeta) return;
-        const id = Number(tarjeta.dataset.paletTapasId);
+        const id = Number(tarjeta.dataset.paletFondosId);
         if (!id) return;
-        origenTapasSeleccionadoId = origenTapasSeleccionadoId === id ? null : id;
-        origenTapasSeleccionManual = true;
-        renderizarOrigenesTapasFabricacion();
+        origenFondosSeleccionadoId = origenFondosSeleccionadoId === id ? null : id;
+        origenFondosSeleccionManual = true;
+        renderizarOrigenesFondosFabricacion();
     });
-    actualizarModoConsumoTapas();
+    actualizarModoConsumoFondos();
 }
 
-function actualizarModoConsumoTapas() {
-    const esTapas = document.getElementById("consumo-destino-producto")?.value === "tapas";
-    document.querySelector("#panelConsumo .panel-fijo-body > .table-responsive")?.classList.toggle("d-none", esTapas);
-    document.getElementById("consumo-lote-fila")?.classList.toggle("d-none", esTapas);
-    document.getElementById("consumo-proveedor-tapas-fila")?.classList.toggle("d-none", !esTapas);
-    document.getElementById("consumo-tapas-listado")?.classList.toggle("d-none", !esTapas);
-    document.getElementById("consumo-tapas-agregar")?.classList.toggle("d-none", !esTapas);
-    if (esTapas) {
+function actualizarModoConsumoFondos() {
+    const esFondos = document.getElementById("consumo-destino-producto")?.value === "fondos";
+    document.querySelector("#panelConsumo .panel-fijo-body > .table-responsive")?.classList.toggle("d-none", esFondos);
+    document.getElementById("consumo-lote-fila")?.classList.toggle("d-none", esFondos);
+    document.getElementById("consumo-proveedor-fondos-fila")?.classList.toggle("d-none", !esFondos);
+    document.getElementById("consumo-fondos-listado")?.classList.toggle("d-none", !esFondos);
+    document.getElementById("consumo-fondos-agregar")?.classList.toggle("d-none", !esFondos);
+    if (esFondos) {
         document.getElementById("consumo-stock-agregar-trazabilidad")?.classList.add("d-none");
         document.getElementById("consumo-palet-agregar-trazabilidad")?.classList.add("d-none");
-        poblarProveedoresTapas();
-        cargarPaletsTapas();
+        poblarProveedoresFondos();
+        cargarPaletsFondos();
     } else if (typeof actualizarBotonFooterConsumo === "function") {
         actualizarBotonFooterConsumo(document.querySelector("#consumo-panel-tabs .nav-link.active")?.id);
     }
 }
 
-function poblarProveedoresTapas() {
-    const selector = document.getElementById("consumo-proveedor-tapas");
+function poblarProveedoresFondos() {
+    const selector = document.getElementById("consumo-proveedor-fondos");
     if (!selector) return;
     const anterior = selector.value;
     selector.replaceChildren(new Option("Seleccione proveedor...", ""));
@@ -48,17 +48,17 @@ function poblarProveedoresTapas() {
     if (proveedores.some((proveedor) => String(proveedor.id) === anterior)) selector.value = anterior;
 }
 
-function crearListadoPaletsTapas(contenedor, palets) {
+function crearListadoPaletsFondos(contenedor, palets) {
     if (!contenedor) return;
     contenedor.replaceChildren();
     if (!palets.length) {
-        contenedor.textContent = "No hay orígenes de tapas.";
+        contenedor.textContent = "No hay orígenes de fondos.";
         return;
     }
     const tabla = document.createElement("table");
     tabla.className = "table table-sm table-bordered mb-0";
     const cabecera = tabla.createTHead().insertRow();
-    ["Origen tapas", "M³ total", "M³ consumido", "M³ restante"].forEach((texto) => {
+    ["Origen fondos", "M³ total", "M³ consumido", "M³ restante"].forEach((texto) => {
         const th = document.createElement("th");
         th.scope = "col";
         th.textContent = texto;
@@ -79,30 +79,30 @@ function crearListadoPaletsTapas(contenedor, palets) {
     contenedor.appendChild(envoltorio);
 }
 
-function obtenerOrigenTapasSeleccionadoId() {
-    return origenTapasSeleccionadoId;
+function obtenerOrigenFondosSeleccionadoId() {
+    return origenFondosSeleccionadoId;
 }
 
-function renderizarOrigenesTapasFabricacion() {
-    const contenedor = document.getElementById("fabricar-bota-tapas-listado");
-    const resumen = document.getElementById("resumen_origen_tapas");
+function renderizarOrigenesFondosFabricacion() {
+    const contenedor = document.getElementById("fabricar-bota-fondos-listado");
+    const resumen = document.getElementById("resumen_origen_fondos");
     if (!contenedor) return;
     contenedor.replaceChildren();
-    const seleccionado = paletsTapasFabricacion.find((palet) => Number(palet.id) === origenTapasSeleccionadoId);
-    if (resumen) resumen.textContent = seleccionado?.codigo || "Selecciona un origen de tapas";
-    if (!paletsTapasFabricacion.length) {
+    const seleccionado = paletsFondosFabricacion.find((palet) => Number(palet.id) === origenFondosSeleccionadoId);
+    if (resumen) resumen.textContent = seleccionado?.codigo || "Selecciona un origen de fondos";
+    if (!paletsFondosFabricacion.length) {
         const vacio = document.createElement("div");
         vacio.className = "panel-botas-trazas-vacio";
-        vacio.textContent = "No hay orígenes de tapas.";
+        vacio.textContent = "No hay orígenes de fondos.";
         contenedor.appendChild(vacio);
         return;
     }
-    paletsTapasFabricacion.forEach((palet) => {
-        const activo = Number(palet.id) === origenTapasSeleccionadoId;
+    paletsFondosFabricacion.forEach((palet) => {
+        const activo = Number(palet.id) === origenFondosSeleccionadoId;
         const tarjeta = document.createElement("button");
         tarjeta.type = "button";
         tarjeta.className = `bota-lote-item w-100 text-start${activo ? " bota-lote-item-activo" : ""}`;
-        tarjeta.dataset.paletTapasId = String(palet.id);
+        tarjeta.dataset.paletFondosId = String(palet.id);
         tarjeta.setAttribute("aria-pressed", activo ? "true" : "false");
         const titulo = document.createElement("div");
         titulo.className = "bota-lote-titulo";
@@ -119,29 +119,35 @@ function renderizarOrigenesTapasFabricacion() {
     });
 }
 
-async function cargarPaletsTapas(lineaId = null) {
+async function cargarPaletsFondos(lineaId = null) {
     try {
-        const palets = (await wsRequest("listar_palets_tapas", {})) || [];
-        crearListadoPaletsTapas(document.getElementById("consumo-tapas-listado"), palets);
-        const nuevaLinea = lineaId !== null && lineaId !== origenTapasLineaId;
-        if (nuevaLinea) {
-            origenTapasLineaId = lineaId;
-            origenTapasSeleccionManual = false;
-            origenTapasSeleccionadoId = null;
-        }
-        paletsTapasFabricacion = palets;
-        if (!palets.some((palet) => Number(palet.id) === origenTapasSeleccionadoId)) {
-            origenTapasSeleccionadoId = null;
-        }
-        if (!origenTapasSeleccionManual && palets.length === 1) origenTapasSeleccionadoId = Number(palets[0].id);
-        renderizarOrigenesTapasFabricacion();
+        const palets = (await wsRequest("listar_palets_fondos", {})) || [];
+        cargarPaletsFondosDesdeDatos(palets, lineaId);
     } catch (error) {
-        console.error("No se pudieron cargar los orígenes de tapas:", error);
+        console.error("No se pudieron cargar los orígenes de fondos:", error);
     }
 }
 
-async function agregarConsumoTapas() {
-    const proveedorId = Number(document.getElementById("consumo-proveedor-tapas")?.value || 0);
+function cargarPaletsFondosDesdeDatos(palets = [], lineaId = null) {
+    crearListadoPaletsFondos(document.getElementById("consumo-fondos-listado"), palets);
+    const nuevaLinea = lineaId !== null && lineaId !== origenFondosLineaId;
+    if (nuevaLinea) {
+        origenFondosLineaId = lineaId;
+        origenFondosSeleccionManual = false;
+        origenFondosSeleccionadoId = null;
+    }
+    paletsFondosFabricacion = Array.isArray(palets) ? palets : [];
+    if (!paletsFondosFabricacion.some((palet) => Number(palet.id) === origenFondosSeleccionadoId)) {
+        origenFondosSeleccionadoId = null;
+    }
+    if (!origenFondosSeleccionManual && paletsFondosFabricacion.length === 1) {
+        origenFondosSeleccionadoId = Number(paletsFondosFabricacion[0].id);
+    }
+    renderizarOrigenesFondosFabricacion();
+}
+
+async function agregarConsumoFondos() {
+    const proveedorId = Number(document.getElementById("consumo-proveedor-fondos")?.value || 0);
     const desdePalet = document.getElementById("consumo-tab-palet")?.classList.contains("active");
     const paletOrigenId = desdePalet ? null : Number(document.getElementById("consumo-palet-origen")?.value || 0);
     const lotePalet = desdePalet ? String(document.getElementById("consumo-palet-lote")?.value || "").trim() : null;
@@ -153,7 +159,7 @@ async function agregarConsumoTapas() {
         return;
     }
     try {
-        await wsRequest("agregar_palet_tapas_desde_stock", {
+        await wsRequest("agregar_palet_fondos_desde_stock", {
             proveedor_id: proveedorId,
             palet_origen_id: paletOrigenId,
             lote_palet: lotePalet,
@@ -161,10 +167,10 @@ async function agregarConsumoTapas() {
             paquetes,
         });
         await cargarPaletsConsumoEnSelector();
-        await cargarPaletsTapas();
+        await cargarPaletsFondos();
         if (desdePalet) document.getElementById("consumo-palet-lote").value = "";
     } catch (error) {
-        console.error("No se pudo agregar el consumo de tapas:", error);
-        alert(error?.message || "No se pudo agregar el consumo de tapas.");
+        console.error("No se pudo agregar el consumo de fondos:", error);
+        alert(error?.message || "No se pudo agregar el consumo de fondos.");
     }
 }

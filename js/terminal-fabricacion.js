@@ -2,6 +2,24 @@ function prepararEventosFabricacion() {
     console.log("[fabricar-bota] prepararEventosFabricacion iniciado");
     registrarEventosVistaFabricacionSemanal();
 
+    document.getElementById("lista_fabricacion_semanal_botas_header")?.addEventListener("click", async (event) => {
+        if (event.target.closest("[data-action='abrir-cierre-semanal']")) return;
+        const tarjeta = event.target.closest("[data-linea-id]");
+        if (tarjeta) await seleccionarFabricacionDesdePhp(tarjeta);
+    });
+
+    document.getElementById("lista_trazabilidad_botas")?.addEventListener("click", async (event) => {
+        const tarjeta = event.target.closest("[data-lote-id]");
+        if (!tarjeta) return;
+        await cambiarEstadoLoteBota(Number(tarjeta.dataset.loteId), Number(tarjeta.dataset.estado) === 1 ? 0 : 1);
+    });
+
+    document.getElementById("fabricar-bota-fondos-listado")?.addEventListener("click", async (event) => {
+        const tarjeta = event.target.closest("[data-lote-id]");
+        if (!tarjeta) return;
+        await seleccionarLoteFondo(Number(tarjeta.dataset.loteId));
+    });
+
     const btnImprimir = document.getElementById("fabricacion-imprimir-etiqueta");
     console.log("[fabricar-bota] boton abrir modal encontrado:", !!btnImprimir);
 
@@ -12,6 +30,17 @@ function prepararEventosFabricacion() {
             await imprimirEtiquetaFabricarBotaDesdeUI();
         });
     }
+
+    document.getElementById("fabricacion-cierre-semanal")?.addEventListener("click", () => {
+        const boton = document.getElementById("fabricacion-cierre-semanal");
+        const lineaId = Number(boton?.dataset.lineaId || lineaFabricacionActualId || 0);
+        if (!lineaId) {
+            alert("Selecciona una fabricación.");
+            return;
+        }
+        console.info("[fabricacion] abrir cierre semanal", { fabricacion_semanal_id: lineaId });
+        abrirVistaCierreSemanalDesdeLinea?.(lineaId, "vista_fabricacion");
+    });
 
     const btnConfirmar = document.getElementById("fabricacion-confirmar-impresion");
     if (btnConfirmar) {
@@ -50,8 +79,60 @@ function prepararEventosFabricacion() {
 
 }
 
+async function seleccionarFabricacionDesdePhp(tarjeta) {
+    const lineaId = Number(tarjeta.dataset.lineaId || 0);
+    if (!lineaId) return;
+    try {
+        const respuesta = await GET(`./api/fabricacion_seleccion.php?id=${encodeURIComponent(lineaId)}`);
+        const linea = respuesta?.fabricacion || {};
+        lineaFabricacionActualId = lineaId;
+        ordenFabricacionActualId = Number(linea.pedido_id || 0) || null;
+        lineaFabricacionMaterialActualId = Number(linea.material_id || 0) || null;
+        lineaFabricacionTipoBotaActualId = Number(linea.tipo_producto_id || 0) || null;
+        lineaFabricacionTipoActualId = lineaFabricacionTipoBotaActualId;
+        document.querySelectorAll("#lista_fabricacion_semanal_botas_header [data-linea-id]").forEach((item) => {
+            item.classList.toggle("fabricacion-card-seleccionada", item === tarjeta);
+        });
+        const selectorFabricaciones = document.getElementById("fabricacion-semanal-selector");
+        if (selectorFabricaciones) selectorFabricaciones.open = false;
+        const botonCierre = document.getElementById("fabricacion-cierre-semanal");
+        if (botonCierre) {
+            botonCierre.dataset.lineaId = String(lineaId);
+            botonCierre.disabled = false;
+        }
+        const producto = document.getElementById("botas-producto-orden");
+        if (producto) producto.textContent = `Tipo/Material: ${linea.tipo_descripcion || "-"} / ${linea.material_descripcion || "-"}`;
+        const cantidades = document.getElementById("botas-resumen-cantidades");
+        if (cantidades) {
+            cantidades.innerHTML = `Tostado: ${linea.tostado_descripcion || "-"}<br>Pedido total/fabricado: ${Number(linea.pedido_cantidad || 0)} / ${Number(linea.pedido_cantidad_fabricada || 0)}<br>Semana total/fabricado: ${Number(linea.cantidad || 0)} / ${Number(linea.cantidad_fabricada || 0)}`;
+        }
+        const titulo = document.getElementById("botas-panel-titulo");
+        if (titulo) titulo.textContent = linea.pedido_descripcion ? `Fabricación de botas: ${linea.pedido_descripcion}` : "Fabricación de botas";
+    } catch (error) {
+        console.error("No se pudo seleccionar la fabricación:", error);
+    } finally {
+        actualizarBotonImpresionBotas();
+    }
+}
+
+async function cambiarEstadoLoteBota(id, estado) {
+    if (!id) return;
+    await POST("./api/lotes_botas_estado.php", { id, estado });
+    const respuesta = await GET("./api/lotes_botas.php");
+    lotesBotasMovil = Array.isArray(respuesta?.lotes) ? respuesta.lotes : [];
+    pintarLotesBotasDesdePhp();
+}
+
+async function seleccionarLoteFondo(id) {
+    if (!id) return;
+    await POST("./api/lotes_fondos_estado.php", { id });
+    const respuesta = await GET("./api/lotes_fondos.php");
+    lotesFondosMovil = Array.isArray(respuesta?.lotes) ? respuesta.lotes : [];
+    pintarLotesFondosDesdePhp();
+}
+
 function registrarEventosVistaFabricacionSemanal() {
-    const tablaLineas = document.querySelector("#vista_fabricacion_semanal #lista_fabricacion_semanal_botas");
+    const tablaLineas = document.querySelector("#vista_fabricacion #lista_fabricacion_semanal_botas");
     if (tablaLineas) {
         tablaLineas.addEventListener("click", function (event) {
             const botonCierre = event.target.closest("[data-action='abrir-cierre-semanal']");
@@ -59,7 +140,7 @@ function registrarEventosVistaFabricacionSemanal() {
                 event.stopPropagation();
                 const lineaId = Number(botonCierre.getAttribute("data-linea-id") || 0);
                 if (lineaId) {
-                    abrirVistaCierreSemanalDesdeLinea?.(lineaId, "vista_fabricacion_semanal");
+                    abrirVistaCierreSemanalDesdeLinea?.(lineaId, "vista_fabricacion");
                 }
                 return;
             }
@@ -76,6 +157,9 @@ let lineaFabricacionTipoActualId = null;
 let lineaFabricacionTipoBotaActualId = null;
 let ordenFabricacionActualId = null;
 let lotesFabricacionTabla = [];
+let fabricacionesSemanalesMovil = [];
+let lotesBotasMovil = [];
+let lotesFondosMovil = [];
 
 // Cache sencillo para datos que necesitamos mostrar
 const terminalFabricacion = {
@@ -162,34 +246,90 @@ async function asegurarDatosFabricacionTerminal() {
 }
 
 async function cargarFabricacionSemanalActivaFabricacion(opciones = {}) {
-    const autoAbrirLineaUnica = opciones.autoAbrirLineaUnica !== false;
-    const contenedor = document.querySelector("#lista_fabricacion_semanal_botas");
+    const contenedor = document.querySelector("#lista_fabricacion_semanal_botas_header, #lista_fabricacion_semanal_botas_legacy");
     if (!contenedor) return;
     try {
-        await asegurarDatosFabricacionTerminal();
-        const fabricacion = (await wsRequest("fabricacion", {})) || {};
-        terminalFabricacion.pedidos = fabricacion?.pedidos || {};
-        terminalFabricacion.tipos_producto = fabricacion?.tipos_producto || {};
-        const lineas = Object.values(fabricacion?.fabricacion_semanal || {})
-            .filter((l) => Number(l?.estado || 0) === 2);
+        const [fabricaciones, lotesBotas, lotesFondos] = await Promise.all([
+            GET("./api/fabricacion.php"),
+            GET("./api/lotes_botas.php"),
+            GET("./api/lotes_fondos.php"),
+        ]);
+        fabricacionesSemanalesMovil = Array.isArray(fabricaciones?.fabricaciones)
+            ? fabricaciones.fabricaciones
+            : [];
+        lotesBotasMovil = Array.isArray(lotesBotas?.lotes) ? lotesBotas.lotes : [];
+        lotesFondosMovil = Array.isArray(lotesFondos?.lotes) ? lotesFondos.lotes : [];
+        const resumenFabricaciones = document.getElementById("fabricacion-semanal-selector-resumen");
+        if (resumenFabricaciones) resumenFabricaciones.textContent = `${fabricacionesSemanalesMovil.length} fabricaciones`;
+        await cargarCodigosBatideroEnSelector(false);
+        await cargarOperariosFondadoEnSelector(false);
+        pintarLotesBotasDesdePhp();
+        pintarLotesFondosDesdePhp();
 
-        if (!lineas.length) {
+        if (!fabricacionesSemanalesMovil.length) {
             contenedor.innerHTML = `<div class="fabricacion-card-empty">No hay fabricacion semanal activa</div>`;
             return;
         }
 
-        actualizarCardsFabricacionSemanalBotas(lineas);
-
-        if (autoAbrirLineaUnica && lineas.length === 1) {
-            const filaUnica = contenedor.querySelector("[data-linea-id]");
-            if (filaUnica) {
-                await mostrarLineaFabricacion(filaUnica);
-            }
-        }
+        actualizarCardsFabricacionSemanalBotas(fabricacionesSemanalesMovil);
     } catch (err) {
         console.error(err);
         contenedor.innerHTML = `<div class="fabricacion-card-empty">Error al cargar fabricacion semanal activa</div>`;
     }
+}
+
+function pintarLotesBotasDesdePhp() {
+    actualizarBotonImpresionBotas();
+    const lista = document.getElementById("lista_trazabilidad_botas");
+    const resumen = document.getElementById("resumen_trazabilidad_botas");
+    if (!lista) return;
+    lista.replaceChildren();
+    if (!lotesBotasMovil.length) {
+        lista.innerHTML = `<div class="panel-botas-trazas-vacio">Sin lotes de botas.</div>`;
+        if (resumen) resumen.textContent = "";
+        return;
+    }
+    if (resumen) resumen.textContent = `${lotesBotasMovil.length} lotes`;
+    lotesBotasMovil.forEach((lote) => {
+        const tarjeta = document.createElement("article");
+        tarjeta.className = `bota-lote-item${Number(lote.estado) === 1 ? " bota-lote-item-activo" : ""}`;
+        tarjeta.dataset.loteId = String(lote.id || "");
+        tarjeta.dataset.estado = String(lote.estado || 0);
+        const restante = Math.max(0, Number(lote.cubicaje || 0) - Number(lote.consumido || 0));
+        tarjeta.innerHTML = `
+            <div class="bota-lote-titulo">${lote.codigo || "-"}</div>
+            <div class="bota-lote-detalle">M3: ${formatearNumeroFabricacion(lote.cubicaje)} - ${formatearNumeroFabricacion(lote.consumido)} = ${formatearNumeroFabricacion(restante)}</div>
+            <div class="bota-lote-detalle">Botas: ${Number(lote.contador_botas || 0)}</div>
+        `;
+        lista.appendChild(tarjeta);
+    });
+}
+
+function pintarLotesFondosDesdePhp() {
+    actualizarBotonImpresionBotas();
+    const lista = document.getElementById("fabricar-bota-fondos-listado");
+    const resumen = document.getElementById("resumen_origen_fondos");
+    if (!lista) return;
+    lista.replaceChildren();
+    if (!lotesFondosMovil.length) {
+        lista.innerHTML = `<div class="panel-botas-trazas-vacio">Sin lotes de fondos.</div>`;
+        if (resumen) resumen.textContent = "";
+        return;
+    }
+    if (resumen) resumen.textContent = `${lotesFondosMovil.length} lotes`;
+    lotesFondosMovil.forEach((lote) => {
+        const tarjeta = document.createElement("article");
+        tarjeta.className = `bota-lote-item${Number(lote.estado) === 1 ? " bota-lote-item-activo" : ""}`;
+        tarjeta.dataset.loteId = String(lote.id || "");
+        tarjeta.dataset.estado = String(lote.estado || 0);
+        const restante = Math.max(0, Number(lote.cubicaje || 0) - Number(lote.consumido || 0));
+        tarjeta.innerHTML = `
+            <div class="bota-lote-titulo">${lote.codigo || "-"}</div>
+            <div class="bota-lote-detalle">M3: ${formatearNumeroFabricacion(lote.cubicaje)} - ${formatearNumeroFabricacion(lote.consumido)} = ${formatearNumeroFabricacion(restante)}</div>
+            <div class="bota-lote-detalle">Fondos: ${Number(lote.contador_fondos || 0)}</div>
+        `;
+        lista.appendChild(tarjeta);
+    });
 }
 
 function seleccionarLineaFabricacionSemanal(fila) {
@@ -243,7 +383,7 @@ async function mostrarLineaFabricacion(fila) {
     }
     const tituloPanel = document.getElementById("botas-panel-titulo");
     if (tituloPanel) {
-        const baseTitulo = "Fabricar bota";
+        const baseTitulo = "Fabricación de botas";
         tituloPanel.textContent = pedidoDescripcion
             ? `${baseTitulo}: ${pedidoDescripcion}`
             : baseTitulo;
@@ -262,12 +402,12 @@ async function mostrarLineaFabricacion(fila) {
     }
     if (lineaFabricacionActualId) {
         cargarTrazabilidadFabricacion(lineaFabricacionActualId);
-        cargarPaletsTapas(lineaFabricacionActualId);
+        cargarPaletsFondos(lineaFabricacionActualId);
     }
 }
 
 function actualizarCardsFabricacionSemanalBotas(lineas) {
-    const contenedor = document.querySelector("#lista_fabricacion_semanal_botas");
+    const contenedor = document.querySelector("#lista_fabricacion_semanal_botas_header, #lista_fabricacion_semanal_botas_legacy");
     if (!contenedor) return;
     contenedor.innerHTML = "";
     if (!lineas || !lineas.length) {
@@ -287,64 +427,31 @@ function actualizarCardsFabricacionSemanalBotas(lineas) {
         card.dataset.cantidadFabricada = linea.cantidad_fabricada ?? "";
 
         const pedido = terminalFabricacion.pedidos?.[linea.pedido_id] || null;
-        const pedidoDescripcion = (pedido?.descripcion || `Pedido ${linea.pedido_id || "-"}`).trim();
+        const pedidoDescripcion = (linea.pedido_descripcion || pedido?.descripcion || `Pedido ${linea.pedido_id || "-"}`).trim();
         card.dataset.pedidoDescripcion = pedidoDescripcion;
 
-        const info = typeof obtenerInfoLineaSemanal === "function"
-            ? obtenerInfoLineaSemanal(linea)
-            : {
-                fechaInicio: formatearFechaEuropea(linea.fecha_inicio),
-                tipo: terminalFabricacion.tipos_producto?.[linea.tipo_producto_id]?.descripcion || "-",
-                material: terminalFabricacion.materiales?.[linea.material_id]?.descripcion || "-",
-                tostado: terminalFabricacion.tostados?.[linea.tostado_id]?.descripcion || "-",
-                semanaPedida: Number(linea.cantidad) || 0,
-                semanaFabricada: Number(linea.cantidad_fabricada) || 0,
-                pedidoTotal: Number(pedido?.cantidad) || 0,
-                pedidoFabricado: Number(pedido?.cantidad_fabricada) || 0,
-            };
+                const info = {
+                        fechaInicio: formatearFechaEuropea(linea.fecha_inicio),
+                        tipo: linea.tipo_descripcion || terminalFabricacion.tipos_producto?.[linea.tipo_producto_id]?.descripcion || "-",
+                        material: linea.material_descripcion || terminalFabricacion.materiales?.[linea.material_id]?.descripcion || "-",
+                        tostado: linea.tostado_descripcion || terminalFabricacion.tostados?.[linea.tostado_id]?.descripcion || "-",
+                        semanaPedida: Number(linea.cantidad) || 0,
+                        semanaFabricada: Number(linea.cantidad_fabricada) || 0,
+                        pedidoTotal: Number(linea.pedido_cantidad ?? pedido?.cantidad) || 0,
+                        pedidoFabricado: Number(linea.pedido_cantidad_fabricada ?? pedido?.cantidad_fabricada) || 0,
+                };
 
         card.innerHTML = `
-      <div class="fabricacion-card-title">
-        <div>
-          <h6>${pedidoDescripcion}</h6>
-        </div>
-        <span class="fabricacion-card-date">${info.fechaInicio || "-"}</span>
-      </div>
-      <div class="fabricacion-card-grid">
-        <div class="fabricacion-card-field">
-          <span class="fabricacion-card-label">Tipo</span>
-          <span class="fabricacion-card-value">${info.tipo}</span>
-        </div>
-        <div class="fabricacion-card-field">
-          <span class="fabricacion-card-label">Material</span>
-          <span class="fabricacion-card-value">${info.material}</span>
-        </div>
-        <div class="fabricacion-card-field">
-          <span class="fabricacion-card-label">Tostado</span>
-          <span class="fabricacion-card-value">${info.tostado || "-"}</span>
-        </div>
-        <div class="fabricacion-card-field fabricacion-card-field-semana-pedida">
-          <span class="fabricacion-card-label">Semana pedida</span>
-          <span class="fabricacion-card-value">${info.semanaPedida}</span>
-        </div>
-        <div class="fabricacion-card-field">
-          <span class="fabricacion-card-label">Semana fabricada</span>
-          <span class="fabricacion-card-value">${info.semanaFabricada}</span>
-        </div>
-        <div class="fabricacion-card-field">
-          <span class="fabricacion-card-label">Pedido total</span>
-          <span class="fabricacion-card-value">${info.pedidoTotal}</span>
-        </div>
-        <div class="fabricacion-card-field">
-          <span class="fabricacion-card-label">Pedido fabricado</span>
-          <span class="fabricacion-card-value">${info.pedidoFabricado}</span>
-        </div>
-      </div>
-        <div class="fabricacion-card-actions">
-          <button type="button" class="btn btn-outline-primary btn-sm" data-action="abrir-cierre-semanal" data-linea-id="${linea.id ?? ""}">
-            <i class="bi bi-clipboard-check"></i> Cierre semanal
-          </button>
-        </div>
+            <div class="fabricacion-card-title">
+                                <h6>${pedidoDescripcion}</h6>
+                                <span class="fabricacion-card-date">${info.fechaInicio || "-"}</span>
+            </div>
+                        <div class="fabricacion-card-resumen">
+                <div>Tipo/Material: ${info.tipo} / ${info.material}</div>
+                <div>Tostado: ${info.tostado || "-"}</div>
+                <div>Pedido total/fabricado: ${info.pedidoTotal} / ${info.pedidoFabricado}</div>
+                <div>Semana total/fabricado: ${info.semanaPedida} / ${info.semanaFabricada}</div>
+                        </div>
     `;
         contenedor.appendChild(card);
     });
@@ -362,8 +469,8 @@ function formatearFechaEuropea(valor) {
 
 function formatearNumeroFabricacion(valor) {
     return Number(valor || 0).toLocaleString("es-ES", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 3,
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
     });
 }
 
@@ -452,6 +559,7 @@ async function cargarCodigosBatideroEnSelector(mantenerSeleccion = false) {
         return;
     }
     selector.value = "";
+    actualizarBotonImpresionBotas();
 }
 
 function obtenerLoteDesdeCodigoPalet(codigoPalet) {
@@ -565,6 +673,7 @@ async function cargarOperariosFondadoEnSelector(mantenerSeleccion = false) {
     const valorPrevio = selector.value || "";
     try {
         selector.innerHTML = `<option value="">Cargando operarios...</option>`;
+        actualizarBotonImpresionBotas();
         const payload = (await wsRequest("listar_operarios_planificacion_fabricacion", {
             puesto_nombre: "FONDAR",
             dias_previos: 2,
@@ -596,54 +705,13 @@ async function cargarOperariosFondadoEnSelector(mantenerSeleccion = false) {
     } catch (err) {
         console.error("No se pudieron cargar operarios de fondado:", err);
         selector.innerHTML = `<option value="">Error cargando operarios</option>`;
+    } finally {
+        actualizarBotonImpresionBotas();
     }
 }
 
 async function imprimirEtiquetaFabricarBotaDesdeUI() {
-    if (!lineaFabricacionActualId) {
-        alert("Seleccione una linea de fabricacion.");
-        return;
-    }
-    const lotesSeleccionados = lotesFabricacionTabla
-        .filter((item) => item.activa)
-        .map((item) => item.lote);
-    const batidero = Number(document.getElementById("fabricar-bota-batidero")?.value || 0);
-    const operarioFondadoId = Number(document.getElementById("fabricar-bota-operario-fondado")?.value || 0);
-    const cantidad = Number(document.getElementById("fabricar-bota-cantidad-etiquetas")?.value || 0);
-    const paletTapasId = obtenerOrigenTapasSeleccionadoId();
-    if (!paletTapasId) {
-        alert("Debes seleccionar un origen de tapas.");
-        return;
-    }
-    if (!lotesSeleccionados.length || !batidero || !operarioFondadoId || cantidad <= 0) {
-        alert("Debes seleccionar al menos un lote, y completar batidero y operario de fondado.");
-        return;
-    }
-    try {
-        const payload = {
-            fabricacion_semanal_id: lineaFabricacionActualId,
-            lotes: lotesSeleccionados,
-            tipo: "BOTA",
-            operarios_ids: [operarioFondadoId],
-            batidero,
-            cantidad_etiquetas: cantidad,
-            palet_tapas_id: paletTapasId,
-        };
-        console.log("[fabricar-bota] enviando wsRequest imprimir_etiqueta_fabricacion", payload);
-        const resp = await wsRequest("imprimir_etiqueta_fabricacion", payload);
-        console.log("[fabricar-bota] respuesta wsRequest imprimir_etiqueta_fabricacion", resp);
-
-        cargarTrazabilidadFabricacion(lineaFabricacionActualId);
-        cargarPaletsTapas(lineaFabricacionActualId);
-        //cargarFabricacionSemanalActivaFabricacion();
-        const cantidadInput = document.getElementById("fabricar-bota-cantidad-etiquetas");
-        if (cantidadInput) {
-            cantidadInput.value = "0";
-        }
-    } catch (err) {
-        console.error("[fabricar-bota] error en imprimir_etiqueta_fabricacion", err);
-        alert("Error al imprimir etiqueta.");
-    }
+    await fabricarEImprimirBotasDesdePhp();
 }
 
 function ajustarZIndexModal(modalEl) {
@@ -851,45 +919,7 @@ function obtenerOperariosSeleccionados() {
 }
 
 async function imprimirEtiquetaFabricacion(operariosIds = [], cantidadEtiquetas = 1) {
-    if (!lineaFabricacionActualId) {
-        alert("Seleccione una linea de fabricacion.");
-        return;
-    }
-    if (!obtenerOrigenTapasSeleccionadoId()) {
-        alert("Debes seleccionar un origen de tapas.");
-        return;
-    }
-    try {
-        const trazas = (await wsRequest("listar_trazabilidad_fabricacion", {
-            fabricacion_semanal_id: lineaFabricacionActualId,
-            // Código anterior: incluir_huerfanas: true,
-            incluir_compartidas: true,
-        })) || [];
-        const activas = trazas.filter((t) => Number(t.estado || 0) === 0);
-        if (!activas.length) {
-            alert("No hay palets activos para imprimir.");
-            return;
-        }
-        const trazabilidadIds = activas
-            .map((t) => Number(t.id))
-            .filter((id) => !!id);
-        const paletCodigos = activas.map((t) => t.palet_codigo || t.palet_id || "").filter(Boolean);
-        const resp = await wsRequest("imprimir_etiqueta_fabricacion", {
-            trazabilidad_ids: trazabilidadIds,
-            palet_codigos: paletCodigos,
-            tipo: "BOTA",
-            operarios_ids: operariosIds,
-            cantidad_etiquetas: Math.max(1, Number.parseInt(String(cantidadEtiquetas), 10) || 1),
-            palet_tapas_id: obtenerOrigenTapasSeleccionadoId(),
-        });
-        console.log("Etiqueta creada:", resp);
-        cargarTrazabilidadFabricacion(lineaFabricacionActualId);
-        cargarPaletsTapas(lineaFabricacionActualId);
-        cargarFabricacionSemanalActivaFabricacion();
-    } catch (err) {
-        console.error(err);
-        alert("Error al imprimir etiqueta.");
-    }
+    await fabricarEImprimirBotasDesdePhp({ operariosIds, cantidadEtiquetas });
 }
 
 

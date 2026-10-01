@@ -78,6 +78,7 @@ function actualizarBotonFooterConsumo(tabActivaId) {
 }
 
 async function iniciarVistaConsumoDirecta() {
+        if (esConsumoMaderaLotes()) return abrirConsumoLotes();
         vistaProduccionActiva = "vista_consumo";
         lineaFabricacionActualId = null;
         lineaFabricacionMaterialActualId = null;
@@ -97,8 +98,8 @@ async function iniciarVistaConsumoDirecta() {
         }
 
         await asegurarDatosFabricacionTerminal();
-        poblarProveedoresTapas();
-        actualizarModoConsumoTapas();
+        poblarProveedoresFondos();
+        actualizarModoConsumoFondos();
         await cargarResumenFabricacionSemanalConsumo();
         sincronizarFiltrosConsumoDesdeLinea();
         await cargarPaletsConsumoEnSelector();
@@ -136,8 +137,8 @@ async function cargarResumenFabricacionSemanalConsumo() {
         }
 }
 
-function renderResumenFabricacionSemanalConsumo(lineas) {
-        const contenedor = document.getElementById("consumo-resumen-fabricacion-lista");
+function renderResumenFabricacionSemanalConsumo(lineas, destinoId = "consumo-resumen-fabricacion-lista") {
+        const contenedor = document.getElementById(destinoId);
         if (!contenedor) return;
 
         contenedor.innerHTML = "";
@@ -269,8 +270,8 @@ function mostrarConsumoDesdeLinea(fila) {
         setPantalla("vista_consumo", { pedido_id: ordenFabricacionActualId, fabricacion_semanal_id: lineaFabricacionActualId });
     }
     cargarTrazabilidadConsumo(lineaFabricacionActualId);
-    poblarProveedoresTapas();
-    actualizarModoConsumoTapas();
+    poblarProveedoresFondos();
+    actualizarModoConsumoFondos();
 }
 
 function sincronizarFiltrosConsumoDesdeLinea() {
@@ -614,6 +615,7 @@ async function agregarTrazabilidadConsumoDesdePalet() {
 }
 
 function refrescarConsumoDesdeServidor() {
+    if (esConsumoMaderaLotes()) return;
     cargarResumenFabricacionSemanalConsumo();
     if (vistaProduccionActiva === "vista_consumo") {
         cargarTrazabilidadConsumo(lineaFabricacionActualId || null);

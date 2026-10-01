@@ -31,6 +31,11 @@ document.addEventListener("DOMContentLoaded", function () {
     // Selecciona todas las migas de pan
     const migasPan = document.querySelector("header nav ol");
     migasPan.addEventListener("click", function (event) {
+        console.info("[breadcrumb] clic delegado", {
+            texto: event.target.textContent?.trim(),
+            destino: event.target.closest("li[mostrar]")?.getAttribute("mostrar"),
+            pantalla: pantallaActual,
+        });
         event.preventDefault();
         const miga = event.target.closest("li:not(.active)");
         if (!miga || !miga.hasAttribute("mostrar")) return; // Verifica que se haya hecho clic en una miga válida
@@ -40,9 +45,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     prepararEventosRecepcion();
     prepararEventosConsumo();
-    prepararEventosTapas();
+    prepararEventosConsumoLotes();
+    prepararEventosFondos();
     prepararEventosFabricacion();
     prepararEventosCierreSemanal?.();
+    prepararEventosLotesCierrePhp();
     prepararEventosDestino();
     prepararEventosAlmacen();
     prepararEventosAnaliticas?.();
@@ -70,7 +77,7 @@ const contextoNavegacion = {
     ubicacionOrigen: "botas",
     moverStockOrigen: "palets_madera",
     procesarStockOrigen: "palets_madera",
-    cierreSemanalOrigen: "vista_fabricacion_semanal",
+    cierreSemanalOrigen: "vista_fabricacion",
     autoAccesoConsumo: false,
     autoAccesoFabricacion: false,
 };
@@ -99,17 +106,19 @@ function mostrarSeccion(id) {
         if (id === "vista_consumo") {
             const activarAutoAccesoConsumo = contextoNavegacion.autoAccesoConsumo === true;
             contextoNavegacion.autoAccesoConsumo = false;
-            if (activarAutoAccesoConsumo) {
+            document.getElementById('panelConsumo').classList.toggle('d-none', esConsumoMaderaLotes());
+            if (esConsumoMaderaLotes()) {
+                abrirConsumoLotes();
+            } else if (activarAutoAccesoConsumo) {
                 iniciarVistaConsumoDirecta?.();
             } else {
                 cargarResumenFabricacionSemanalConsumo?.();
             }
         }
-        if (id === "vista_fabricacion_semanal") {
+        if (id === "vista_fabricacion") {
             contextoNavegacion.autoAccesoConsumo = false;
-            const activarAutoAccesoFabricacion = contextoNavegacion.autoAccesoFabricacion === true;
             contextoNavegacion.autoAccesoFabricacion = false;
-            cargarFabricacionSemanalActivaFabricacion({ vistaId: "vista_fabricacion_semanal", autoAbrirLineaUnica: activarAutoAccesoFabricacion });
+            cargarFabricacionSemanalActivaFabricacion({ vistaId: "vista_fabricacion" });
         }
         if (id === "vista_ubicacion") {
             cargarFormularioCrearStock();
@@ -276,22 +285,12 @@ function actualizarMigasPan(mostrarSeccion) {
             nuevaMiga = crearMigaPan("Consumo", mostrarSeccion, true);
             migasPan.appendChild(nuevaMiga);
             break;
-        case "vista_fabricacion_semanal":
-            nuevaMiga = crearMigaPan("Inicio", "vista_tareas", false);
-            migasPan.appendChild(nuevaMiga);
-            nuevaMiga = crearMigaPan("Botas", "vista_menu_botas", false);
-            migasPan.appendChild(nuevaMiga);
-            nuevaMiga = crearMigaPan("Fabricación semanal", mostrarSeccion, true);
-            migasPan.appendChild(nuevaMiga);
-            break;
         case "vista_fabricacion":
             nuevaMiga = crearMigaPan("Inicio", "vista_tareas", false);
             migasPan.appendChild(nuevaMiga);
             nuevaMiga = crearMigaPan("Botas", "vista_menu_botas", false);
             migasPan.appendChild(nuevaMiga);
-            nuevaMiga = crearMigaPan("Fabricación semanal", "vista_fabricacion_semanal", false);
-            migasPan.appendChild(nuevaMiga);
-            nuevaMiga = crearMigaPan("Fabricar bota", mostrarSeccion, true);
+            nuevaMiga = crearMigaPan("Fabricación de botas", mostrarSeccion, true);
             migasPan.appendChild(nuevaMiga);
             break;
         case "vista_cierre_semanal":
@@ -310,7 +309,7 @@ function actualizarMigasPan(mostrarSeccion) {
             } else {
                 nuevaMiga = crearMigaPan("Botas", "vista_menu_botas", false);
                 migasPan.appendChild(nuevaMiga);
-                nuevaMiga = crearMigaPan("Fabricación semanal", "vista_fabricacion_semanal", false);
+                nuevaMiga = crearMigaPan("Fabricación semanal", "vista_fabricacion", false);
             }
             migasPan.appendChild(nuevaMiga);
             nuevaMiga = crearMigaPan("Cierre semanal", mostrarSeccion, true);
@@ -361,16 +360,22 @@ function actualizarMigasPan(mostrarSeccion) {
     }
 }
 
-function crearMigaPan(nombre, mostrarSeccion, activo = false) {
+function crearMigaPan(nombre, destino, activo = false) {
     const nuevaMiga = document.createElement("li");
     nuevaMiga.classList.add("breadcrumb-item");
-    nuevaMiga.setAttribute("mostrar", mostrarSeccion);
+    nuevaMiga.setAttribute("mostrar", destino);
     if (activo) {
         nuevaMiga.innerHTML = nombre;
         nuevaMiga.classList.add("active");
         nuevaMiga.setAttribute("aria-current", "page");
     } else {
         nuevaMiga.innerHTML = `<a href="#">${nombre}</a>`;
+        nuevaMiga.addEventListener("click", (event) => {
+            console.info("[breadcrumb] clic", { texto: nombre, destino, pantalla: pantallaActual });
+            event.preventDefault();
+            event.stopPropagation();
+            mostrarSeccion(destino);
+        });
     }
     return nuevaMiga;
 }
@@ -519,7 +524,6 @@ var ACCIONES = {
         if (
             pantallaActual === "vista_fabricacion"
             || pantallaActual === "vista_consumo"
-            || pantallaActual === "vista_fabricacion_semanal"
             || pantallaActual === "vista_ubicacion"
             || pantallaActual === "vista_mover_stock"
             || pantallaActual === "vista_procesar_stock"
@@ -531,13 +535,13 @@ var ACCIONES = {
             if (msg?.data?.refetch_maestros) {
                 refrescarMaestrosFabricacion?.();
             }
-            if (msg?.data?.tabla === "palets_tapas" || msg?.data?.tabla === "trazabilidad_fabricacion") {
-                cargarPaletsTapas?.(pantallaActual === "vista_fabricacion" ? lineaFabricacionActualId : null);
+            if ((msg?.data?.tabla === "palets_fondos" || msg?.data?.tabla === "trazabilidad_fabricacion") && !(pantallaActual === "vista_consumo" && esConsumoMaderaLotes())) {
+                cargarPaletsFondos?.(pantallaActual === "vista_fabricacion" ? lineaFabricacionActualId : null);
             }
             if (pantallaActual === "vista_consumo") {
                 refrescarConsumoDesdeServidor?.(msg.data || {});
             }
-            if (pantallaActual === "vista_fabricacion" || pantallaActual === "vista_fabricacion_semanal") {
+            if (pantallaActual === "vista_fabricacion") {
                 refrescarFabricacionDesdeServidor?.(msg.data || {});
             }
             if (pantallaActual === "vista_ubicacion") {

@@ -174,16 +174,15 @@ class CrudRoutes:
                         await ws.send_json(safe_data)
                         if msg.action in {
                             "agregar_trazabilidad_fabricacion_desde_palet_stock",
-                            "agregar_palet_tapas_desde_stock",
+                            "agregar_palet_fondos_desde_stock",
                             "agregar_trazabilidad_fabricacion_desde_palet",
                             "actualizar_estado_trazabilidad_fabricacion",
                             "actualizar_estado_lote_fabricacion_compartida",
                             "eliminar_trazabilidad_fabricacion",
-                            "imprimir_etiqueta_fabricacion",
                             "mover_stock",
                             "procesar_stock",
                         }:
-                            tabla_cambio = "palets_tapas" if msg.action == "agregar_palet_tapas_desde_stock" else "trazabilidad_fabricacion"
+                            tabla_cambio = "palets_fondos" if msg.action == "agregar_palet_fondos_desde_stock" else "trazabilidad_fabricacion"
                             await broadcast_pantalla("vista_fabricacion", {"tabla": tabla_cambio})
                             await broadcast_pantalla("vista_consumo", {"tabla": tabla_cambio})
                             await broadcast_pantalla("vista_fabricacion_semanal", {"tabla": "trazabilidad_fabricacion"})

@@ -1,7 +1,7 @@
 const estadoCierreSemanal = {
     lineaId: null,
     pedidoId: null,
-    origenVista: "vista_fabricacion_semanal",
+    origenVista: "vista_fabricacion",
     data: null,
     borrador: null,
     siguientesSemanas: [],
@@ -500,10 +500,10 @@ function registrarBotasReferidasCierreSemanal(lineaId, data = {}) {
     });
 }
 
-async function abrirVistaCierreSemanalDesdeLinea(lineaId, origenVista = "vista_fabricacion_semanal") {
+async function abrirVistaCierreSemanalDesdeLinea(lineaId, origenVista = "vista_fabricacion") {
     estadoCierreSemanal.lineaId = Number(lineaId || 0) || null;
     estadoCierreSemanal.pedidoId = null;
-    estadoCierreSemanal.origenVista = origenVista || "vista_fabricacion_semanal";
+    estadoCierreSemanal.origenVista = origenVista || "vista_fabricacion";
     if (typeof contextoNavegacion !== "undefined") {
         contextoNavegacion.cierreSemanalOrigen = estadoCierreSemanal.origenVista;
     }
@@ -513,6 +513,12 @@ async function abrirVistaCierreSemanalDesdeLinea(lineaId, origenVista = "vista_f
 async function cargarVistaCierreSemanal() {
     try {
         asegurarEstructuraVistaCierreSemanal();
+        const usarPhp = estadoCierreSemanal.origenVista !== "vista_consumo";
+        configurarVistaCierreSemanalPhp(usarPhp);
+        if (usarPhp) {
+            await cargarCierreSemanalDesdePhp();
+            return;
+        }
         const lineaId = Number(estadoCierreSemanal.lineaId || 0);
         if (!lineaId) return;
         const data = (await wsRequest("obtener_cierre_semanal", { fabricacion_semanal_id: lineaId })) || {};
@@ -549,7 +555,7 @@ async function cargarVistaCierreSemanal() {
 
         const titulo = document.getElementById("cierre-semanal-titulo");
         const subtitulo = document.getElementById("cierre-semanal-subtitulo");
-        if (titulo) titulo.textContent = `Cierre semanal: ${info.pedidoDescripcion}`;
+        if (titulo) titulo.textContent = "Cierre Semanal";
         if (subtitulo) subtitulo.textContent = `Tipo ${info.tipo} | Madera ${info.material} | Inicio ${info.fechaInicio || "-"}`;
         actualizarCabeceraCierreSemanal(info);
         renderizarLotesCierreSemanal(info);
@@ -568,6 +574,10 @@ function prepararEventosCierreSemanal() {
     const btnReset = document.getElementById("cierre-semanal-reset");
     if (btnReset) {
         btnReset.addEventListener("click", () => {
+            if (cierreSemanalPhp.activo) {
+                restablecerLotesCierrePhp();
+                return;
+            }
             estadoCierreSemanal.borrador = crearBorradorCierreSemanal(estadoCierreSemanal.data?.palets || []);
             renderizarNotaCambiosCierreSemanal();
             const info = obtenerInfoLineaSemanal(estadoCierreSemanal.data?.linea || {});
@@ -604,6 +614,10 @@ function prepararEventosCierreSemanal() {
     const btnCerrar = document.getElementById("cierre-semanal-cerrar");
     if (btnCerrar) {
         btnCerrar.addEventListener("click", async () => {
+            if (cierreSemanalPhp.activo) {
+                await confirmarLotesCierrePhp();
+                return;
+            }
             const operaciones = estadoCierreSemanal.borrador?.operaciones || [];
             if (!operaciones.length) {
                 alert("No hay cambios pendientes de actualizar.");
@@ -630,6 +644,7 @@ function prepararEventosCierreSemanal() {
     if (listaLotes && !listaLotes.dataset.bindCierreSemanal) {
         listaLotes.dataset.bindCierreSemanal = "1";
         listaLotes.addEventListener("click", (event) => {
+            if (cierreSemanalPhp.activo) return;
             const info = obtenerInfoLineaSemanal(estadoCierreSemanal.data?.linea || {});
             const btnReasignarSobrante = event.target.closest("[data-action='reasignar-sobrante']");
             if (btnReasignarSobrante) {
