@@ -17,7 +17,7 @@ try {
         'rafa',
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
-    $stmt = $pdo->prepare('UPDATE a_lotes_botas SET estado = :estado, updated_at = CURRENT_TIMESTAMP WHERE id = :id');
+    $stmt = $pdo->prepare("UPDATE a_lotes SET estado = :estado, updated_at = CURRENT_TIMESTAMP WHERE id = :id AND objetivo = 'BOTAS'");
     $stmt->execute(['id' => $id, 'estado' => $estado]);
 
     echo json_encode(['ok' => true, 'id' => $id, 'estado' => $estado]);

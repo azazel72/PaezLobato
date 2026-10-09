@@ -1,4 +1,4 @@
-const cierreSemanalPhp = { activo: false, carga: 0, fabricaciones: [], lotes: [] };
+const cierreSemanalPhp = { activo: false, carga: 0, fabricaciones: [], lotes: [], opcionesProcesado: { ubicaciones: [], lotes: [] } };
 
 function configurarVistaCierreSemanalPhp(activo) {
     cierreSemanalPhp.activo = activo;
@@ -37,6 +37,20 @@ function lineasFabricacionCierrePhp(linea) {
         `Pedido total/fabricado: ${Number(linea.pedido_cantidad || 0)} / ${Number(linea.pedido_cantidad_fabricada || 0)}`,
         `Semana total/fabricado: ${Number(linea.cantidad || 0)} / ${Number(linea.cantidad_fabricada || 0)}`,
     ];
+}
+
+async function cerrarFabricacionCierrePhp(lineaId, boton) {
+    if (!lineaId || boton?.disabled) return;
+    boton.disabled = true;
+    try {
+        await POST('./api/cerrar_fabricacion_semanal.php', { fabricacion_semanal_id: Number(lineaId) });
+        cierreSemanalPhp.fabricaciones = cierreSemanalPhp.fabricaciones.filter(linea => Number(linea.id) !== Number(lineaId));
+        if (Number(estadoCierreSemanal.lineaId) === Number(lineaId)) estadoCierreSemanal.lineaId = null;
+        pintarFabricacionesCierrePhp();
+    } catch (error) {
+        boton.disabled = false;
+        alert(error.message);
+    }
 }
 
 function actualizarCabeceraCierrePhp() {
@@ -84,6 +98,15 @@ function pintarFabricacionesCierrePhp() {
         const datos = elementoCierrePhp("div", "fabricacion-card-resumen");
         lineasFabricacionCierrePhp(linea).forEach(texto => datos.appendChild(elementoCierrePhp("div", "", texto)));
         tarjeta.appendChild(datos);
+        const cerrar = elementoCierrePhp("button", "btn btn-outline-primary btn-sm mt-2", "Cierre Semanal");
+        cerrar.type = "button";
+        cerrar.addEventListener("click", event => {
+            event.stopPropagation();
+            const descripcion = linea.pedido_descripcion || `fabricación ${linea.id}`;
+            if (!confirm(`¿Confirmas el cierre semanal de ${descripcion}?`)) return;
+            cerrarFabricacionCierrePhp(linea.id, cerrar);
+        });
+        tarjeta.appendChild(cerrar);
         tarjeta.addEventListener("click", () => seleccionarFabricacionCierrePhp(linea.id));
         tarjeta.addEventListener("keydown", event => {
             if (event.key === "Enter" || event.key === " ") {
@@ -121,6 +144,15 @@ function pintarLotesCierrePhp() {
             `Botas fabricadas: ${Number(lote.contador_botas || 0)}`,
         ].forEach(texto => datos.appendChild(elementoCierrePhp("div", "", texto)));
         tarjeta.appendChild(datos);
+        if (Math.abs(restante) < 0.0000001 && !lote.finalizarPendiente) {
+            const finalizar = elementoCierrePhp("button", "btn btn-outline-secondary btn-sm mt-2", "Finalizar lote");
+            finalizar.type = "button";
+            finalizar.addEventListener("click", event => {
+                event.stopPropagation();
+                solicitarFinalizarLoteCierrePhp(lote);
+            });
+            tarjeta.appendChild(finalizar);
+        }
         tarjeta.appendChild(crearAccionesLoteCierrePhp(lote));
         lista.appendChild(tarjeta);
     });
@@ -143,9 +175,10 @@ async function cargarCierreSemanalDesdePhp() {
     document.getElementById("cierre-semanal-lotes-resumen").textContent = "";
     document.getElementById("cierre-semanal-fabricaciones").textContent = "Cargando fabricaciones...";
     document.getElementById("cierre-semanal-lotes").textContent = "Cargando lotes...";
-    const [fabricaciones, lotes] = await Promise.allSettled([
+    const [fabricaciones, lotes, opcionesProcesado] = await Promise.allSettled([
         GET("./api/fabricacion.php"),
         GET("./api/lotes_botas.php"),
+        GET("./api/opciones_procesado.php"),
     ]);
     if (carga !== cierreSemanalPhp.carga || !cierreSemanalPhp.activo) return;
     if (fabricaciones.status === "fulfilled" && fabricaciones.value?.ok && Array.isArray(fabricaciones.value.fabricaciones)) {
@@ -162,5 +195,12 @@ async function cargarCierreSemanalDesdePhp() {
     } else {
         document.getElementById("cierre-semanal-lotes").textContent = "No se pudieron cargar los lotes.";
         console.error("[cierre-semanal PHP] Error cargando lotes", lotes);
+    }
+    if (opcionesProcesado.status === "fulfilled" && opcionesProcesado.value?.ok) {
+        cierreSemanalPhp.opcionesProcesado = {
+            ubicaciones: Array.isArray(opcionesProcesado.value.ubicaciones) ? opcionesProcesado.value.ubicaciones : [],
+            lotes: Array.isArray(opcionesProcesado.value.lotes) ? opcionesProcesado.value.lotes : [],
+        };
+        if (cierreSemanalPhp.lotes.length) pintarLotesCierrePhp();
     }
 }

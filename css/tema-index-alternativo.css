@@ -1,0 +1,64 @@
+/* Variante visual exclusiva de index.html. No cambia la estructura ni el flujo. */
+.index-version-alternativa {
+    --index-acento: #0f766e;
+    --index-acento-oscuro: #115e59;
+    --index-fondo: #e9f1f2;
+    --index-panel: #f7fbfb;
+}
+
+.index-version-alternativa main {
+    background-color: var(--index-fondo);
+}
+
+.index-version-alternativa .navbar.bg-dark,
+.index-version-alternativa .offcanvas.text-bg-dark {
+    background-color: #123b46 !important;
+}
+
+.index-version-alternativa .navbar-brand {
+    color: #d8f3ef;
+}
+
+.index-version-alternativa .offcanvas-menu-grupo h6 {
+    color: #9ddbd2;
+}
+
+.index-version-alternativa .offcanvas-nav-btn {
+    border-color: rgba(157, 219, 210, 0.35);
+    background: rgba(157, 219, 210, 0.1);
+}
+
+.index-version-alternativa .offcanvas-nav-btn:hover {
+    background: #285963;
+    border-color: #9ddbd2;
+}
+
+.index-version-alternativa .btn-primary {
+    background-color: var(--index-acento);
+    border-color: var(--index-acento-oscuro);
+}
+
+.index-version-alternativa .btn:not(:disabled):hover {
+    transform: none !important;
+    filter: brightness(0.92);
+    transition: filter 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.index-version-alternativa button:not(:disabled):hover {
+    transform: none !important;
+}
+
+.index-version-alternativa button:not(:disabled):not(.navbar-toggler):not(.btn-close):hover {
+    filter: brightness(0.92);
+}
+
+.index-version-alternativa a {
+    color: var(--index-acento-oscuro);
+}
+
+.index-version-alternativa .card,
+.index-version-alternativa .table,
+.index-version-alternativa .panel,
+.index-version-alternativa .list-group-item {
+    background-color: var(--index-panel);
+}

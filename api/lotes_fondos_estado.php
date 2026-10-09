@@ -20,8 +20,8 @@ try {
         ]
     );
     $pdo->beginTransaction();
-    $pdo->exec('UPDATE a_lotes_fondos SET estado = 0, updated_at = CURRENT_TIMESTAMP');
-    $stmt = $pdo->prepare('UPDATE a_lotes_fondos SET estado = 1, updated_at = CURRENT_TIMESTAMP WHERE id = :id');
+    $pdo->exec("UPDATE a_lotes SET estado = 0, updated_at = CURRENT_TIMESTAMP WHERE objetivo = 'FONDOS'");
+    $stmt = $pdo->prepare("UPDATE a_lotes SET estado = 1, updated_at = CURRENT_TIMESTAMP WHERE id = :id AND objetivo = 'FONDOS'");
     $stmt->execute(['id' => $id]);
     $pdo->commit();
 

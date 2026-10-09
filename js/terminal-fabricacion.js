@@ -34,10 +34,6 @@ function prepararEventosFabricacion() {
     document.getElementById("fabricacion-cierre-semanal")?.addEventListener("click", () => {
         const boton = document.getElementById("fabricacion-cierre-semanal");
         const lineaId = Number(boton?.dataset.lineaId || lineaFabricacionActualId || 0);
-        if (!lineaId) {
-            alert("Selecciona una fabricación.");
-            return;
-        }
         console.info("[fabricacion] abrir cierre semanal", { fabricacion_semanal_id: lineaId });
         abrirVistaCierreSemanalDesdeLinea?.(lineaId, "vista_fabricacion");
     });
@@ -261,6 +257,8 @@ async function cargarFabricacionSemanalActivaFabricacion(opciones = {}) {
         lotesFondosMovil = Array.isArray(lotesFondos?.lotes) ? lotesFondos.lotes : [];
         const resumenFabricaciones = document.getElementById("fabricacion-semanal-selector-resumen");
         if (resumenFabricaciones) resumenFabricaciones.textContent = `${fabricacionesSemanalesMovil.length} fabricaciones`;
+        const botonCierre = document.getElementById("fabricacion-cierre-semanal");
+        if (botonCierre) botonCierre.disabled = fabricacionesSemanalesMovil.length === 0;
         await cargarCodigosBatideroEnSelector(false);
         await cargarOperariosFondadoEnSelector(false);
         pintarLotesBotasDesdePhp();
@@ -292,10 +290,10 @@ function pintarLotesBotasDesdePhp() {
     if (resumen) resumen.textContent = `${lotesBotasMovil.length} lotes`;
     lotesBotasMovil.forEach((lote) => {
         const tarjeta = document.createElement("article");
-        tarjeta.className = `bota-lote-item${Number(lote.estado) === 1 ? " bota-lote-item-activo" : ""}`;
+        const restante = Number(lote.cubicaje || 0) - Number(lote.consumido || 0);
+        tarjeta.className = `bota-lote-item${Number(lote.estado) === 1 ? " bota-lote-item-activo" : ""}${restante < 0 ? " bota-lote-item-negativo" : ""}`;
         tarjeta.dataset.loteId = String(lote.id || "");
         tarjeta.dataset.estado = String(lote.estado || 0);
-        const restante = Math.max(0, Number(lote.cubicaje || 0) - Number(lote.consumido || 0));
         tarjeta.innerHTML = `
             <div class="bota-lote-titulo">${lote.codigo || "-"}</div>
             <div class="bota-lote-detalle">M3: ${formatearNumeroFabricacion(lote.cubicaje)} - ${formatearNumeroFabricacion(lote.consumido)} = ${formatearNumeroFabricacion(restante)}</div>
@@ -319,10 +317,10 @@ function pintarLotesFondosDesdePhp() {
     if (resumen) resumen.textContent = `${lotesFondosMovil.length} lotes`;
     lotesFondosMovil.forEach((lote) => {
         const tarjeta = document.createElement("article");
-        tarjeta.className = `bota-lote-item${Number(lote.estado) === 1 ? " bota-lote-item-activo" : ""}`;
+        const restante = Number(lote.cubicaje || 0) - Number(lote.consumido || 0);
+        tarjeta.className = `bota-lote-item${Number(lote.estado) === 1 ? " bota-lote-item-activo" : ""}${restante < 0 ? " bota-lote-item-negativo" : ""}`;
         tarjeta.dataset.loteId = String(lote.id || "");
         tarjeta.dataset.estado = String(lote.estado || 0);
-        const restante = Math.max(0, Number(lote.cubicaje || 0) - Number(lote.consumido || 0));
         tarjeta.innerHTML = `
             <div class="bota-lote-titulo">${lote.codigo || "-"}</div>
             <div class="bota-lote-detalle">M3: ${formatearNumeroFabricacion(lote.cubicaje)} - ${formatearNumeroFabricacion(lote.consumido)} = ${formatearNumeroFabricacion(restante)}</div>
@@ -468,7 +466,8 @@ function formatearFechaEuropea(valor) {
 }
 
 function formatearNumeroFabricacion(valor) {
-    return Number(valor || 0).toLocaleString("es-ES", {
+    const numero = Number(valor);
+    return (Number.isFinite(numero) ? numero : 0).toLocaleString("es-ES", {
         minimumFractionDigits: 4,
         maximumFractionDigits: 4,
     });
@@ -505,10 +504,10 @@ async function cargarTrazabilidadFabricacion(lineaId) {
         }
         lotesFabricacionTabla.forEach((item) => {
             const card = document.createElement("article");
-            card.className = `bota-lote-item${item.activa ? " bota-lote-item-activo" : ""}`;
+            const restante = item.volumenTotal - item.consumidoTotal;
+            card.className = `bota-lote-item${item.activa ? " bota-lote-item-activo" : ""}${restante < 0 ? " bota-lote-item-negativo" : ""}`;
             card.dataset.lote = item.lote;
             card.dataset.activa = item.activa ? "1" : "0";
-            const restante = Math.max(0, item.volumenTotal - item.consumidoTotal);
             card.innerHTML = `
         <div class="bota-lote-titulo">${item.lote}</div>
         <div class="bota-lote-detalle">M3: ${formatearNumeroFabricacion(item.volumenTotal)} - ${formatearNumeroFabricacion(item.consumidoTotal)} = ${formatearNumeroFabricacion(restante)}</div>

@@ -1,14 +1,11 @@
 const claveImpresionBotasPendiente = "fabricacion-botas-impresion-pendiente-v3";
 let fabricacionImpresionEnCurso = false;
-let fabricacionImpresionPendiente = null;
 
-function guardarImpresionBotasPendiente(pendiente) {
-    fabricacionImpresionPendiente = pendiente;
+function limpiarImpresionBotasPendiente() {
     try {
-        if (pendiente) sessionStorage.setItem(claveImpresionBotasPendiente, JSON.stringify(pendiente));
-        else sessionStorage.removeItem(claveImpresionBotasPendiente);
+        sessionStorage.removeItem(claveImpresionBotasPendiente);
     } catch (error) {
-        console.warn("[fabricar-bota] No se pudo guardar la impresión pendiente en esta pestaña", error);
+        console.warn("[fabricar-bota] No se pudo limpiar el estado antiguo de impresión", error);
     }
     actualizarBotonImpresionBotas();
 }
@@ -38,10 +35,10 @@ function validarSeleccionImpresionBotas(opciones = {}) {
 function actualizarBotonImpresionBotas() {
     const boton = document.getElementById("fabricar-bota-imprimir");
     if (!boton) return;
-    const faltan = fabricacionImpresionPendiente ? [] : validarSeleccionImpresionBotas().faltan;
+    const faltan = validarSeleccionImpresionBotas().faltan;
     boton.disabled = fabricacionImpresionEnCurso || faltan.length > 0;
     boton.title = faltan.length ? `Falta seleccionar: ${faltan.join(", ")}.` : "";
-    boton.innerHTML = `<i class="bi bi-printer"></i> ${fabricacionImpresionPendiente ? "Reintentar impresión" : "Imprimir etiqueta"}`;
+    boton.innerHTML = `<i class="bi bi-printer"></i> Imprimir etiqueta`;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -50,14 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
         campo?.addEventListener("change", actualizarBotonImpresionBotas);
         campo?.addEventListener("input", actualizarBotonImpresionBotas);
     }
-    try {
-        const pendiente = JSON.parse(sessionStorage.getItem(claveImpresionBotasPendiente) || "null");
-        if (pendiente && Array.isArray(pendiente.codigos) && pendiente.codigos.length) {
-            fabricacionImpresionPendiente = pendiente;
-        }
-    } catch (error) {
-        console.warn("[fabricar-bota] No se pudo recuperar la impresión pendiente", error);
-    }
+    limpiarImpresionBotasPendiente();
     actualizarBotonImpresionBotas();
 });
 
@@ -86,49 +76,49 @@ async function refrescarFabricacionTrasCrearBotas(lineaId) {
 
 async function fabricarEImprimirBotasDesdePhp(opciones = {}) {
     if (fabricacionImpresionEnCurso) return;
-    if (!conn?.socket || conn.socket.readyState !== WebSocket.OPEN) {
-        alert("Conecta con el servidor de impresión antes de continuar.");
+    const seleccion = validarSeleccionImpresionBotas(opciones);
+    if (seleccion.faltan.length) {
+        actualizarBotonImpresionBotas();
+        alert(`Falta seleccionar: ${seleccion.faltan.join(", ")}.`);
         return;
     }
-    let payload = null;
-    if (!fabricacionImpresionPendiente) {
-        const seleccion = validarSeleccionImpresionBotas(opciones);
-        if (seleccion.faltan.length) {
-            actualizarBotonImpresionBotas();
-            alert(`Falta seleccionar: ${seleccion.faltan.join(", ")}.`);
-            return;
-        }
-        payload = seleccion.payload;
-    }
+    const payload = seleccion.payload;
 
     fabricacionImpresionEnCurso = true;
     actualizarBotonImpresionBotas();
     let lineaCreadaId = null;
     let avisoFinal = "";
     try {
-        if (!fabricacionImpresionPendiente) {
-            const respuesta = await POST("./api/fabricacion_crear_botas.php", payload);
-            if (!respuesta?.ok || !Array.isArray(respuesta.codigos) || respuesta.codigos.length !== payload.cantidad_etiquetas) {
-                throw new Error(respuesta?.error || "PHP no ha confirmado la creación de las botas. Revisa la respuesta en consola.");
-            }
-            lineaCreadaId = payload.fabricacion_semanal_id;
-            guardarImpresionBotasPendiente({ codigos: respuesta.codigos, fabricacionId: lineaCreadaId });
-            const cantidadInput = document.getElementById("fabricar-bota-cantidad-etiquetas");
-            if (cantidadInput) cantidadInput.value = "0";
+        const respuesta = await POST("./api/fabricacion_crear_botas.php", payload);
+        if (!respuesta?.ok || !Array.isArray(respuesta.codigos) || respuesta.codigos.length !== payload.cantidad_etiquetas) {
+            throw new Error(respuesta?.error || "PHP no ha confirmado la creación de las botas. Revisa la respuesta en consola.");
         }
-        const { codigos, fabricacionId } = fabricacionImpresionPendiente;
-        lineaCreadaId = fabricacionId;
-        console.info("[fabricar-bota] enviar códigos a imprimir", { codigos });
-        const impresion = await wsRequest("imprimir_etiqueta_fabricacion", { codigos });
-        if (!impresion?.ok) throw new Error("El servidor no ha confirmado el envío a la impresora.");
-        console.info("[fabricar-bota] impresión enviada", impresion);
-        guardarImpresionBotasPendiente(null);
-        avisoFinal = `${codigos.length} etiqueta(s) enviada(s) a la impresora.`;
+        lineaCreadaId = payload.fabricacion_semanal_id;
+        const cantidadInput = document.getElementById("fabricar-bota-cantidad-etiquetas");
+        if (cantidadInput) cantidadInput.value = "1";
+        limpiarImpresionBotasPendiente();
+
+        let impresionError = null;
+        if (conn?.socket && conn.socket.readyState === WebSocket.OPEN) {
+            try {
+                console.info("[fabricar-bota] enviar códigos a imprimir", { codigos: respuesta.codigos });
+                const impresion = await wsRequest("imprimir_etiqueta_fabricacion", { codigos: respuesta.codigos });
+                if (!impresion?.ok) throw new Error("El servidor no ha confirmado el envío a la impresora.");
+                console.info("[fabricar-bota] impresión enviada", impresion);
+            } catch (error) {
+                impresionError = error;
+                console.error("[fabricar-bota] impresión", error);
+            }
+        } else {
+            impresionError = new Error("No hay conexión con el servidor de impresión.");
+        }
+        avisoFinal = impresionError
+            ? `${respuesta.codigos.length} bota(s) creada(s), pero no se pudo imprimir. Puedes reimprimirla(s) desde «Botas diarias».`
+            : `${respuesta.codigos.length} etiqueta(s) enviada(s) a la impresora.`;
     } catch (error) {
         console.error("[fabricar-bota] fabricación/impresión", error);
-        avisoFinal = fabricacionImpresionPendiente
-            ? `Las botas ya están creadas. Pulsa «Reintentar impresión» para enviar los mismos códigos sin volver a fabricarlas. ${error.message}`
-            : error.message;
+        limpiarImpresionBotasPendiente();
+        avisoFinal = error.message;
     } finally {
         if (lineaCreadaId) {
             try {

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/lib/fabricacion_db.php';
+require_once __DIR__ . '/lib/php_log.php';
 
 // Trabajar en unidades de 0.0001 evita perder consumo al repartir varios lotes.
 function fabricacionUnidades(string $cantidad): int
@@ -73,15 +74,18 @@ function crearBotasFabricacion(PDO $pdo, array $datos): array
             if (!$stmt->fetchColumn()) throw new InvalidArgumentException('Operario no válido.');
         }
 
-        $lotes = $pdo->query('SELECT id, codigo FROM a_lotes_botas
-            WHERE estado = 1 AND is_deleted = 0 ORDER BY codigo, id FOR UPDATE')->fetchAll(PDO::FETCH_ASSOC);
+        // JavaScript envía los lotes marcados como seleccionados (estado = 1).
+        // Los lotes disponibles pero no seleccionados (estado = 0) no forman
+        // parte de esta fabricación.
+        $lotes = $pdo->query("SELECT id, codigo FROM a_lotes
+            WHERE objetivo = 'BOTAS' AND estado = 1 AND is_deleted = 0 ORDER BY codigo, id FOR UPDATE")->fetchAll(PDO::FETCH_ASSOC);
         $actuales = array_map('intval', array_column($lotes, 'id'));
         sort($actuales, SORT_NUMERIC);
         if ($actuales !== $lotesIds) {
             throw new InvalidArgumentException('La selección de lotes de botas ha cambiado. Recarga la vista.');
         }
-        $fondos = $pdo->query('SELECT id, codigo FROM a_lotes_fondos
-            WHERE estado = 1 AND is_deleted = 0 ORDER BY id FOR UPDATE')->fetchAll(PDO::FETCH_ASSOC);
+        $fondos = $pdo->query("SELECT id, codigo FROM a_lotes
+            WHERE objetivo = 'FONDOS' AND estado = 1 AND is_deleted = 0 ORDER BY id FOR UPDATE")->fetchAll(PDO::FETCH_ASSOC);
         if (count($fondos) !== 1 || (int) $fondos[0]['id'] !== $fondoId) {
             throw new InvalidArgumentException('Debe haber un único lote de fondos seleccionado. Recarga la vista.');
         }
@@ -127,8 +131,8 @@ function crearBotasFabricacion(PDO $pdo, array $datos): array
         $operario = $pdo->prepare('INSERT INTO productos_operarios (producto_id, usuario_id, codigo_batidero) VALUES (?, ?, ?)');
         $trazaBota = $pdo->prepare('INSERT INTO a_trazabilidad_botas (id_botas, id_lote_botas, lote, cantidad) VALUES (?, ?, ?, ?)');
         $trazaFondo = $pdo->prepare('INSERT INTO a_trazabilidad_fondos (id_bota, id_lote_fondos, lote, cantidad) VALUES (?, ?, ?, ?)');
-        $consumirBota = $pdo->prepare('UPDATE a_lotes_botas SET consumido = consumido + ?, contador_botas = contador_botas + 1 WHERE id = ?');
-        $consumirFondo = $pdo->prepare('UPDATE a_lotes_fondos SET consumido = consumido + ?, contador_fondos = contador_fondos + 2 WHERE id = ?');
+        $consumirBota = $pdo->prepare("UPDATE a_lotes SET consumido = consumido + ?, contador_botas = contador_botas + 1 WHERE id = ? AND objetivo = 'BOTAS' AND estado < 2");
+        $consumirFondo = $pdo->prepare("UPDATE a_lotes SET consumido = consumido + ?, contador_fondos = contador_fondos + 2 WHERE id = ? AND objetivo = 'FONDOS' AND estado < 2");
         $codigos = [];
         $productoId = null;
         for ($n = 0; $n < $cantidad; $n++) {
@@ -178,7 +182,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
     } catch (Throwable $error) {
         $validacion = $error instanceof InvalidArgumentException || $error instanceof JsonException;
         http_response_code($validacion ? 400 : 500);
-        error_log('[fabricacion PHP] ' . $error->getMessage());
+        registrarLogPhp('[fabricacion PHP] ' . $error->getMessage());
         echo json_encode(['ok' => false, 'error' => $validacion ? $error->getMessage() : 'No se pudo completar la fabricación. No se ha confirmado la operación.'], JSON_UNESCAPED_UNICODE);
     }
 }

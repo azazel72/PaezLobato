@@ -58,6 +58,14 @@ function actualizarFormularioConsumoLotes() {
         || cubicaje <= 0 || !Number.isInteger(paquetes) || paquetes < 1 || cubicaje * paquetes > Number(origen.cubicaje) - Number(origen.consumido) + 0.0000001;
 }
 
+function limpiarFormularioConsumoLotes() {
+    for (const campo of ['tipo', 'material', 'ubicacion', 'origen', 'fondos']) campoConsumoLotes(campo).value = '';
+    for (const campo of ['buscar', 'cubicaje', 'nombre']) campoConsumoLotes(campo).value = '';
+    campoConsumoLotes('paquetes').value = '1';
+    campoConsumoLotes('mensaje').textContent = '';
+    pintarOrigenesConsumoLotes();
+}
+
 function pintarDestinoConsumoLotes() {
     const fondos = campoConsumoLotes('destino').value === 'fondos';
     campoConsumoLotes('nombre-fila').classList.toggle('d-none', fondos);
@@ -146,16 +154,20 @@ async function guardarConsumoLotes() {
         codigo_destino: destino === 'fondos' ? campoConsumoLotes('fondos').value : campoConsumoLotes('nombre').value.trim(),
         cubicaje: campoConsumoLotes('cubicaje').value, paquetes: Number(campoConsumoLotes('paquetes').value),
     };
+    const origen = consumoLotes.stock.find(lote => String(lote.id) === String(datos.origen_id));
+    const cantidadTransaccion = Number(datos.cubicaje) * datos.paquetes;
     consumoLotes.guardando = true;
     actualizarFormularioConsumoLotes();
     let guardado = false;
     try {
         await peticionConsumoLotes('./api/consumo_lotes.php', datos);
         guardado = true;
+        if (destino === 'fondos') campoConsumoLotes('fondos').value = '';
+        else campoConsumoLotes('nombre').value = '';
         campoConsumoLotes('cubicaje').value = '';
         campoConsumoLotes('paquetes').value = '1';
         await cargarConsumoLotes();
-        campoConsumoLotes('mensaje').textContent = 'Movimiento registrado. Datos actualizados.';
+        campoConsumoLotes('mensaje').textContent = `Transacción: lote ${origen?.codigo || datos.origen_id}, cantidad ${formatearNumeroFabricacion(cantidadTransaccion)}, destino ${datos.codigo_destino}.`;
     } catch (error) {
         campoConsumoLotes('mensaje').textContent = guardado ? `Movimiento guardado. No se pudo actualizar la pantalla: ${error.message}` : error.message;
     } finally {
@@ -165,7 +177,10 @@ async function guardarConsumoLotes() {
 }
 
 function prepararEventosConsumoLotes() {
-    campoConsumoLotes('destino').addEventListener('change', pintarDestinoConsumoLotes);
+    campoConsumoLotes('destino').addEventListener('change', () => {
+        limpiarFormularioConsumoLotes();
+        pintarDestinoConsumoLotes();
+    });
     campoConsumoLotes('listado').addEventListener('click', event => {
         const fila = event.target.closest('tr[data-lote-codigo]');
         if (!fila) return;

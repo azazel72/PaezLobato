@@ -91,7 +91,8 @@ function obtenerInfoLineaSemanal(linea) {
 }
 
 function formatearValorSemanal(valor) {
-    return Number(valor || 0).toLocaleString("es-ES", {
+    const numero = Number(valor);
+    return (Number.isFinite(numero) ? numero : 0).toLocaleString("es-ES", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 3,
     });
@@ -225,20 +226,20 @@ function registrarOperacionTemporalCierre(tipo, detalle) {
 
 function formatearOperacionCierreSemanal(operacion) {
     const detalle = operacion?.detalle || {};
-    const m3 = formatearValorSemanal(detalle.m3);
+    const cantidad = formatearValorSemanal(detalle.cantidad);
     if (operacion?.tipo === "reasignar") {
-        return `Reasignar sobrante ${m3} m3: lote ${detalle.origen} a lote ${detalle.destino}.`;
+        return `Reasignar sobrante ${cantidad} m3: lote ${detalle.origen} a lote ${detalle.destino}.`;
     }
     if (operacion?.tipo === "reasignar_consumo") {
-        return `Reasignar ${m3} m3 de consumo entre los palés seleccionados.`;
+        return `Reasignar ${cantidad} m3 de consumo entre los palés seleccionados.`;
     }
     if (operacion?.tipo === "procesado") {
-        return `Enviar ${m3} m3 del lote ${detalle.lote} a procesado (${detalle.palet_destino_codigo}).`;
+        return `Enviar ${cantidad} m3 del lote ${detalle.lote} a procesado (${detalle.palet_destino_codigo}).`;
     }
     if (operacion?.tipo === "desperdicio") {
-        return `Registrar ${m3} m3 de desperdicio en el lote ${detalle.lote}.`;
+        return `Registrar ${cantidad} m3 de desperdicio en el lote ${detalle.lote}.`;
     }
-    return `${operacion?.tipo || "Cambio"}: ${m3} m3.`;
+    return `${operacion?.tipo || "Cambio"}: ${cantidad} m3.`;
 }
 
 function renderizarNotaCambiosCierreSemanal() {
@@ -650,16 +651,16 @@ function prepararEventosCierreSemanal() {
             if (btnReasignarSobrante) {
                 const origenId = btnReasignarSobrante.getAttribute("data-lote-id") || "";
                 const destinoId = String(document.querySelector(`[data-cierre-destino-sobrante="${origenId}"]`)?.value || "");
-                const m3 = obtenerValorNumericoInput(`[data-cierre-m3-sobrante="${origenId}"]`);
+                const cantidad = obtenerValorNumericoInput(`[data-cierre-m3-sobrante="${origenId}"]`);
                 const origen = obtenerLoteBorradorCierre(origenId);
                 const destino = obtenerLoteBorradorCierre(destinoId);
                 if (!origen || !destino) {
                     alert("Indica un lote destino.");
                     return;
                 }
-                origen.m3Original -= m3;
-                destino.m3Original += m3;
-                registrarOperacionTemporalCierre("reasignar", { origen: origenId, destino: destinoId, m3 });
+                origen.m3Original -= cantidad;
+                destino.m3Original += cantidad;
+                registrarOperacionTemporalCierre("reasignar", { origen: origenId, destino: destinoId, cantidad });
                 actualizarCabeceraCierreSemanal(info);
                 renderizarLotesCierreSemanal(info);
                 return;
@@ -668,7 +669,7 @@ function prepararEventosCierreSemanal() {
             if (btnReasignarItem) {
                 const origenId = btnReasignarItem.getAttribute("data-lote-id") || "";
                 const destinoTrazabilidadId = Number(document.querySelector(`[data-cierre-destino-lote="${origenId}"]`)?.value || 0);
-                const m3 = obtenerValorNumericoInput(`[data-cierre-m3-reasignar="${origenId}"]`);
+                const cantidad = obtenerValorNumericoInput(`[data-cierre-m3-reasignar="${origenId}"]`);
                 const origen = obtenerLoteBorradorCierre(origenId);
                 const trazaOrigen = (estadoCierreSemanal.data?.palets || []).find((palet) => (
                     String(palet?.lote || "") === String(origenId)
@@ -691,12 +692,12 @@ function prepararEventosCierreSemanal() {
                 registrarOperacionTemporalCierre("reasignar_consumo", {
                     trazabilidad_origen_id: Number(trazaOrigen.trazabilidad_id),
                     trazabilidad_destino_id: destinoTrazabilidadId,
-                    m3,
+                    cantidad,
                 });
-                consumosPalets[trazaOrigen.trazabilidad_id] = consumoOrigen - m3;
-                consumosPalets[trazaDestino.trazabilidad_id] = consumoDestino + m3;
-                origen.m3Consumido -= m3;
-                if (destino && destino !== origen) destino.m3Consumido += m3;
+                consumosPalets[trazaOrigen.trazabilidad_id] = consumoOrigen - cantidad;
+                consumosPalets[trazaDestino.trazabilidad_id] = consumoDestino + cantidad;
+                origen.m3Consumido -= cantidad;
+                if (destino && destino !== origen) destino.m3Consumido += cantidad;
                 actualizarCabeceraCierreSemanal(info);
                 renderizarLotesCierreSemanal(info);
                 return;
@@ -705,10 +706,10 @@ function prepararEventosCierreSemanal() {
             if (btnProcesarItem) {
                 const loteId = btnProcesarItem.getAttribute("data-lote-id") || "";
                 const lote = obtenerLoteBorradorCierre(loteId);
-                const m3 = obtenerValorNumericoInput(`[data-cierre-m3-procesado="${loteId}"]`);
+                const cantidad = obtenerValorNumericoInput(`[data-cierre-m3-procesado="${loteId}"]`);
                 const codigoPalet = String(document.querySelector(`[data-cierre-codigo-procesado="${loteId}"]`)?.value || "").trim();
                 const restante = obtenerRestanteLoteCierre(lote);
-                if (!lote || !Number.isFinite(m3) || m3 <= 0) {
+                if (!lote || !Number.isFinite(cantidad) || cantidad <= 0) {
                     alert("Debes indicar m3 válidos para enviar a procesado.");
                     return;
                 }
@@ -716,12 +717,12 @@ function prepararEventosCierreSemanal() {
                     alert("Debes indicar el codigo de palet destino para procesado.");
                     return;
                 }
-                if (restante < m3) {
+                if (restante < cantidad) {
                     alert("No puedes enviar a procesado más m3 de los restantes positivos del lote.");
                     return;
                 }
-                lote.procesado += m3;
-                registrarOperacionTemporalCierre("procesado", { lote: loteId, m3, palet_destino_codigo: codigoPalet });
+                lote.procesado += cantidad;
+                registrarOperacionTemporalCierre("procesado", { lote: loteId, cantidad, palet_destino_codigo: codigoPalet });
                 actualizarCabeceraCierreSemanal(info);
                 renderizarLotesCierreSemanal(info);
                 return;
@@ -730,18 +731,18 @@ function prepararEventosCierreSemanal() {
             if (btnDesperdicio) {
                 const loteId = btnDesperdicio.getAttribute("data-lote-id") || "";
                 const lote = obtenerLoteBorradorCierre(loteId);
-                const m3 = obtenerValorNumericoInput(`[data-cierre-m3-desperdicio="${loteId}"]`);
+                const cantidad = obtenerValorNumericoInput(`[data-cierre-m3-desperdicio="${loteId}"]`);
                 const restante = obtenerRestanteLoteCierre(lote);
-                if (!lote || !Number.isFinite(m3) || m3 <= 0) {
+                if (!lote || !Number.isFinite(cantidad) || cantidad <= 0) {
                     alert("Ese lote no tiene restante pendiente para llevar a desperdicio.");
                     return;
                 }
-                if (restante < m3) {
+                if (restante < cantidad) {
                     alert("No puedes llevar a desperdicio más cantidad que el restante positivo del lote.");
                     return;
                 }
-                lote.desperdicio += m3;
-                registrarOperacionTemporalCierre("desperdicio", { lote: loteId, m3 });
+                lote.desperdicio += cantidad;
+                registrarOperacionTemporalCierre("desperdicio", { lote: loteId, cantidad });
                 actualizarCabeceraCierreSemanal(info);
                 renderizarLotesCierreSemanal(info);
             }

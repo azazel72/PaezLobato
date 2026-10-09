@@ -3,3 +3,4 @@
 
 SOURCE ./DDL/001_v3_0_lotes_y_movimientos.sql;
 SOURCE ./DML/001_v3_0_lotes_iniciales.sql;
+SOURCE ./DDL/002_v3_0_procedimientos_consultas_php.sql;

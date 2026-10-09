@@ -99,8 +99,19 @@
 }
 
 .bota-lote-item-activo {
-    background: #e4f3e8;
+    background: #e4f3e8 !important;
     border-color: #94c4a0;
+}
+
+.bota-lote-item-negativo {
+    background: #fde8e8;
+    border-color: #e39a9a;
+    color: #a12626;
+}
+
+.bota-lote-item-negativo .bota-lote-titulo,
+.bota-lote-item-negativo .bota-lote-detalle {
+    color: #a12626;
 }
 
 .bota-lote-titulo {
