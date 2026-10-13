@@ -32,19 +32,21 @@ function cargarCubicajesConsumoLotes(lista) {
 }
 
 function actualizarCubicajeConsumoLotes() {
-    const tipo = campoConsumoLotes('tipo').value;
-    const valor = consumoLotes.cubicajes[String(tipo)];
+    const origen = consumoLotes.stock.find(lote => String(lote.id) === campoConsumoLotes('origen').value);
+    const valor = origen ? consumoLotes.cubicajes[String(origen.tipo_producto_id)] : undefined;
     const input = campoConsumoLotes('cubicaje');
-    if (input && Number.isFinite(valor) && valor >= 0) input.value = valor ? String(valor) : '';
+    if (input) input.value = Number.isFinite(valor) && valor > 0 ? String(valor) : '';
     actualizarFormularioConsumoLotes();
 }
 
 function pintarOrigenesConsumoLotes() {
+    const origenAnterior = campoConsumoLotes('origen').value;
     const filtros = [['tipo', 'tipo_producto_id'], ['material', 'material_id'], ['ubicacion', 'ubicacion_id']];
     const nombre = campoConsumoLotes('buscar').value.trim().toLocaleLowerCase('es');
     const lotes = consumoLotes.stock.filter(lote => filtros.every(([campo, clave]) => !campoConsumoLotes(campo).value || String(lote[clave]) === campoConsumoLotes(campo).value)
         && (!nombre || lote.codigo.toLocaleLowerCase('es').includes(nombre)));
     opcionesConsumoLotes(campoConsumoLotes('origen'), lotes.map(lote => [lote.id, `${lote.codigo}${lote.objetivo === 'ALMACENADO' ? ' (ALMACENADO)' : ''} — ${formatearNumeroFabricacion(Number(lote.cubicaje) - Number(lote.consumido))} m³ restantes`]), 'Seleccione lote de stock...');
+    if (campoConsumoLotes('origen').value !== origenAnterior) actualizarCubicajeConsumoLotes();
     actualizarFormularioConsumoLotes();
 }
 
@@ -192,13 +194,12 @@ function prepararEventosConsumoLotes() {
         actualizarFormularioConsumoLotes();
     });
     for (const campo of ['tipo', 'material', 'ubicacion']) campoConsumoLotes(campo).addEventListener('change', pintarOrigenesConsumoLotes);
-    campoConsumoLotes('tipo').addEventListener('change', actualizarCubicajeConsumoLotes);
     campoConsumoLotes('buscar').addEventListener('input', pintarOrigenesConsumoLotes);
     for (const campo of ['origen', 'cubicaje', 'paquetes', 'nombre', 'fondos']) campoConsumoLotes(campo).addEventListener('input', actualizarFormularioConsumoLotes);
     campoConsumoLotes('origen').addEventListener('change', () => {
         const lote = consumoLotes.stock.find(l => String(l.id) === campoConsumoLotes('origen').value);
         if (lote) campoConsumoLotes('nombre').value = lote.codigo;
-        actualizarFormularioConsumoLotes();
+        actualizarCubicajeConsumoLotes();
     });
     campoConsumoLotes('agregar').addEventListener('click', guardarConsumoLotes);
 }

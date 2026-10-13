@@ -752,8 +752,10 @@
                     <label class="form-label" for="consumo-lotes-destino">Destino del consumo</label>
                     <select id="consumo-lotes-destino" class="form-select mb-3"><option value="botas">Botas</option><option value="fondos">Fondos</option></select>
                     <details class="consumo-resumen-fabricacion mb-3"><summary>Fabricaciones semanales en producción (solo informativo)</summary><div id="consumo-lotes-fabricaciones" class="produccion-cards-list"></div></details>
-                    <h6 id="consumo-lotes-titulo">Lotes de botas</h6>
-                    <div id="consumo-lotes-listado" class="table-responsive mb-3" aria-live="polite"></div>
+                    <details class="consumo-resumen-fabricacion mb-3">
+                        <summary id="consumo-lotes-titulo">Lotes de botas</summary>
+                        <div id="consumo-lotes-listado" class="table-responsive" aria-live="polite"></div>
+                    </details>
                     <div class="row g-2">
                         <div class="col-12 col-md-4"><label for="consumo-lotes-tipo" class="form-label">Duela</label><select id="consumo-lotes-tipo" class="form-select"></select></div>
                         <div class="col-12 col-md-4"><label for="consumo-lotes-material" class="form-label">Madera</label><select id="consumo-lotes-material" class="form-select"></select></div>
@@ -1438,7 +1440,7 @@
     <script src="./js/terminal-auth.js?v=20260828a"></script>
     <script src="./js/terminal-recepcion.js?v=20260828a"></script>
     <script src="./js/terminal-consumo.js?v=20261001c"></script>
-    <script src="./js/terminal-consumo-lotes.js?v=20261013a"></script>
+    <script src="./js/terminal-consumo-lotes.js?v=20261013b"></script>
     <script src="./js/terminal-fabricacion.js?v=20261001n"></script>
     <script src="./js/terminal-fabricacion-impresion.js?v=20261001c"></script>
     <script src="./js/terminal-fondos.js?v=20261001a"></script>
