@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/lib/fabricacion_db.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -10,15 +11,7 @@ try {
         throw new InvalidArgumentException('Fabricación no válida.');
     }
 
-    $pdo = new PDO(
-        'mysql:host=localhost;port=3306;dbname=antoniopaezlobato;charset=utf8mb4',
-        'rafa',
-        'rafa',
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]
-    );
+    $pdo = fabricacionPdo();
 
     $stmt = $pdo->prepare(
         "SELECT fs.id, fs.pedido_id, fs.tipo_producto_id, fs.material_id, fs.tostado_id,

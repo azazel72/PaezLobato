@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/lib/fabricacion_db.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -11,12 +12,7 @@ try {
         throw new InvalidArgumentException('Lote o estado no válidos.');
     }
 
-    $pdo = new PDO(
-        'mysql:host=localhost;port=3306;dbname=antoniopaezlobato;charset=utf8mb4',
-        'rafa',
-        'rafa',
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
+    $pdo = fabricacionPdo();
     $stmt = $pdo->prepare("UPDATE a_lotes SET estado = :estado, updated_at = CURRENT_TIMESTAMP WHERE id = :id AND objetivo = 'BOTAS'");
     $stmt->execute(['id' => $id, 'estado' => $estado]);
 

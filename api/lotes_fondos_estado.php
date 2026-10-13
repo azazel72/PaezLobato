@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/lib/fabricacion_db.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -10,15 +11,7 @@ try {
         throw new InvalidArgumentException('Lote de fondo no válido.');
     }
 
-    $pdo = new PDO(
-        'mysql:host=localhost;port=3306;dbname=antoniopaezlobato;charset=utf8mb4',
-        'rafa',
-        'rafa',
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_AUTOCOMMIT => false,
-        ]
-    );
+    $pdo = fabricacionPdo();
     $pdo->beginTransaction();
     $pdo->exec("UPDATE a_lotes SET estado = 0, updated_at = CURRENT_TIMESTAMP WHERE objetivo = 'FONDOS'");
     $stmt = $pdo->prepare("UPDATE a_lotes SET estado = 1, updated_at = CURRENT_TIMESTAMP WHERE id = :id AND objetivo = 'FONDOS'");

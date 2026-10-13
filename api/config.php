@@ -1,9 +1,12 @@
 <?php
 declare(strict_types=1);
 
-const DB_DSN  = 'mysql:host=localhost;dbname=antoniopaezlobato;charset=utf8mb4';
-const DB_USER = 'paezlobato';
-const DB_PASS = 'paezlobato';
+require_once __DIR__ . '/lib/mysql_config.php';
+$configuracionBdEquipo = configuracionMysqlEquipo();
+define('DB_DSN', $configuracionBdEquipo['dsn']);
+define('DB_USER', $configuracionBdEquipo['usuario']);
+define('DB_PASS', $configuracionBdEquipo['password']);
+unset($configuracionBdEquipo);
 
 const ALLOW_ALL = true;
 $ALLOWED_TABLES = ['usuarios','clientes','polizas'];
