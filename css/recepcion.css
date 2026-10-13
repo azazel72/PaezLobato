@@ -16,10 +16,57 @@
     padding: 20px;
     box-sizing: border-box;
     gap: 16px;
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
 }
 
-.fleje-card {
+body:has(#vista_menu_palets_fleje.pagina-activa) {
+    height: 100dvh;
+    overflow: hidden;
+}
+
+body:has(#vista_menu_palets_fleje.pagina-activa) > main {
+    flex: 1 1 0;
+    min-height: 0;
+}
+
+body:has(#vista_menu_palets_fleje.pagina-activa) > header,
+body:has(#vista_menu_palets_fleje.pagina-activa) > footer {
+    flex-shrink: 0;
+}
+
+#vista_menu_palets_fleje .fleje-card {
     width: 100%;
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#vista_menu_palets_fleje .fleje-card > .card-header,
+#vista_menu_palets_fleje > .boton-volver {
+    flex-shrink: 0;
+}
+
+#vista_menu_palets_fleje .fleje-card > .card-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#vista_menu_palets_fleje .table-responsive {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+#tabla_entradas_flejes_menu thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 #tabla_entradas_flejes_menu tbody tr.fleje-estado-1 > td {
