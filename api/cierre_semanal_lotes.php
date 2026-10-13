@@ -67,9 +67,10 @@ function confirmarCambiosLotesCierre(PDO $pdo, array $datos): array
         $codigo = trim($codigo);
         if ($tipo === 'procesado' && ($codigo === '' || mb_strlen($codigo) > 60)) throw new InvalidArgumentException('Indica el nombre del lote de destino (máximo 60 caracteres).');
         if ($tipo === 'procesado') {
-            $validarUbicacion = $pdo->prepare('SELECT id FROM ubicaciones WHERE id = ?');
+            $validarUbicacion = $pdo->prepare("SELECT u.id FROM ubicaciones u JOIN instalaciones i ON i.id = u.instalacion_id
+                WHERE u.id = ? AND (UPPER(TRIM(i.nombre)) = 'M' OR UPPER(TRIM(i.tipo)) = 'M')");
             $validarUbicacion->execute([$ubicacionId]);
-            if (!$validarUbicacion->fetchColumn()) throw new InvalidArgumentException('La ubicación seleccionada no existe.');
+            if (!$validarUbicacion->fetchColumn()) throw new InvalidArgumentException('Selecciona una ubicación de una instalación de madera (M).');
         }
         if ($origen === $destino || ($tipo !== 'desperdicio' && $tipo !== 'finalizar' && $cantidad <= 0) || ($tipo === 'desperdicio' && $cantidad === 0)) throw new InvalidArgumentException('Selecciona una cantidad válida.');
         if (!isset($bases[$origen]) || ($tipo === 'consumo' && !isset($bases[$destino]))) throw new InvalidArgumentException('Faltan los valores originales de los lotes.');

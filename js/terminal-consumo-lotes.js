@@ -44,7 +44,7 @@ function pintarOrigenesConsumoLotes() {
     const nombre = campoConsumoLotes('buscar').value.trim().toLocaleLowerCase('es');
     const lotes = consumoLotes.stock.filter(lote => filtros.every(([campo, clave]) => !campoConsumoLotes(campo).value || String(lote[clave]) === campoConsumoLotes(campo).value)
         && (!nombre || lote.codigo.toLocaleLowerCase('es').includes(nombre)));
-    opcionesConsumoLotes(campoConsumoLotes('origen'), lotes.map(lote => [lote.id, `${lote.codigo} — ${formatearNumeroFabricacion(Number(lote.cubicaje) - Number(lote.consumido))} m³ restantes`]), 'Seleccione lote de stock...');
+    opcionesConsumoLotes(campoConsumoLotes('origen'), lotes.map(lote => [lote.id, `${lote.codigo}${lote.objetivo === 'ALMACENADO' ? ' (ALMACENADO)' : ''} — ${formatearNumeroFabricacion(Number(lote.cubicaje) - Number(lote.consumido))} m³ restantes`]), 'Seleccione lote de stock...');
     actualizarFormularioConsumoLotes();
 }
 

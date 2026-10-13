@@ -15,8 +15,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
 
 try {
     $pdo = fabricacionPdo();
-    $ubicaciones = $pdo->query('SELECT id, descripcion FROM ubicaciones ORDER BY orden, id')->fetchAll(PDO::FETCH_ASSOC);
-    $lotes = $pdo->query("SELECT codigo, ubicacion_id FROM a_lotes
+    $ubicaciones = $pdo->query("SELECT u.id, u.descripcion FROM ubicaciones u
+        JOIN instalaciones i ON i.id = u.instalacion_id
+        WHERE UPPER(TRIM(i.nombre)) = 'M' OR UPPER(TRIM(i.tipo)) = 'M'
+        ORDER BY u.orden, u.id")->fetchAll(PDO::FETCH_ASSOC);
+    $lotes = $pdo->query("SELECT codigo, ubicacion_id, objetivo FROM a_lotes
         WHERE objetivo = 'ALMACENADO' AND estado < 2 AND is_deleted = 0
         ORDER BY ubicacion_id, codigo")->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode(['ok' => true, 'ubicaciones' => $ubicaciones, 'lotes' => $lotes], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);

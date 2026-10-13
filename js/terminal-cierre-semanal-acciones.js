@@ -94,7 +94,11 @@ function rellenarLotesProcesadoPorUbicacion(select, input) {
     datalist.replaceChildren();
     cierreSemanalPhp.opcionesProcesado.lotes
         .filter(lote => !ubicacionId || Number(lote.ubicacion_id || 0) === ubicacionId)
-        .forEach(lote => datalist.appendChild(elementoCierrePhp("option", "", lote.codigo)));
+        .forEach(lote => {
+            const opcion = elementoCierrePhp("option", "", `${lote.codigo} (ALMACENADO)`);
+            opcion.value = lote.codigo;
+            datalist.appendChild(opcion);
+        });
 }
 
 function crearAccionesLoteCierrePhp(lote) {

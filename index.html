@@ -221,11 +221,11 @@
                 <i class="bi bi-box-arrow-down fs-2" aria-hidden="true"></i>
                 <span>Procesar</span>
             </button>
-            <button class="boton naranja boton-con-icono" mostrar="vista_mover_stock" data-contexto-mover-stock="palets_madera">
+            <button class="boton naranja boton-con-icono" mostrar="vista_mover_stock" data-contexto-mover-stock="palets_madera" disabled>
                 <i class="bi bi-arrow-left-right fs-2" aria-hidden="true"></i>
                 <span>Mover Stock</span>
             </button>
-            <button class="boton verde boton-con-icono" mostrar="vista_ubicacion" data-contexto-ubicacion="palets_madera">
+            <button class="boton verde boton-con-icono" mostrar="vista_ubicacion" data-contexto-ubicacion="palets_madera" disabled>
                 <i class="bi bi-plus-square fs-2" aria-hidden="true"></i>
                 <span>Crear a partir de Stock</span>
             </button>
@@ -676,7 +676,7 @@
                             </div>
                             <div class="col-12 row g-2 align-items-center">
                                 <div class="col-4">
-                                    <label for="procesarstock-origen" class="form-label mb-0">Palet origen</label>
+                                    <label for="procesarstock-origen" class="form-label mb-0">Lote origen</label>
                                 </div>
                                 <div class="col-8">
                                     <select class="form-select" id="procesarstock-origen">
@@ -686,10 +686,29 @@
                             </div>
                             <div class="col-12 row g-2 align-items-center">
                                 <div class="col-4">
+                                    <label for="procesarstock-ubicacion-destino" class="form-label mb-0">Ubicación destino</label>
+                                </div>
+                                <div class="col-8">
+                                    <select class="form-select" id="procesarstock-ubicacion-destino">
+                                        <option value="">Seleccione ubicación destino...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-12 row g-2 align-items-center">
+                                <div class="col-4">
+                                    <label for="procesarstock-lote-destino" class="form-label mb-0">Lote destino</label>
+                                </div>
+                                <div class="col-8">
+                                    <input type="text" class="form-control" id="procesarstock-lote-destino" list="procesarstock-nombres-destino" maxlength="60" placeholder="Nombre del lote">
+                                    <datalist id="procesarstock-nombres-destino"></datalist>
+                                </div>
+                            </div>
+                            <div class="col-12 row g-2 align-items-center">
+                                <div class="col-4">
                                     <label for="procesarstock-cubicaje" class="form-label mb-0">Cubicaje</label>
                                 </div>
                                 <div class="col-8">
-                                    <input type="number" step="0.001" min="0.001" class="form-control" id="procesarstock-cubicaje" placeholder="0">
+                                    <input type="number" step="0.0001" min="0.0001" class="form-control" id="procesarstock-cubicaje" placeholder="0">
                                 </div>
                             </div>
                             <div class="col-12 row g-2 align-items-center">
@@ -709,6 +728,7 @@
                                 </div>
                             </div>
                             <div class="col-12">
+                                <div id="procesarstock-validacion" class="small text-warning" role="status" hidden></div>
                                 <div id="procesarstock-estado" class="small text-muted"></div>
                             </div>
                         </div>
@@ -1418,13 +1438,13 @@
     <script src="./js/terminal-auth.js?v=20260828a"></script>
     <script src="./js/terminal-recepcion.js?v=20260828a"></script>
     <script src="./js/terminal-consumo.js?v=20261001c"></script>
-    <script src="./js/terminal-consumo-lotes.js?v=20261001e"></script>
+    <script src="./js/terminal-consumo-lotes.js?v=20261013a"></script>
     <script src="./js/terminal-fabricacion.js?v=20261001n"></script>
     <script src="./js/terminal-fabricacion-impresion.js?v=20261001c"></script>
     <script src="./js/terminal-fondos.js?v=20261001a"></script>
     <script src="./js/terminal-cierre-semanal.js?v=20261001d"></script>
     <script src="./js/terminal-cierre-semanal-php.js?v=20261001d"></script>
-    <script src="./js/terminal-cierre-semanal-acciones.js?v=20261001f"></script>
+    <script src="./js/terminal-cierre-semanal-acciones.js?v=20261013a"></script>
     <script src="./js/terminal-productos-destino.js?v=20260828a"></script>
     <script src="./js/terminal-destino.js?v=20260828a"></script>
     <script src="./js/terminal-almacen.js?v=20260828a"></script>
@@ -1432,11 +1452,11 @@
     <script src="./js/terminal-envinado.js?v=20260828a"></script>
     <script src="./js/terminal-ubicacion.js?v=20260828a"></script>
     <script src="./js/terminal-mover-stock.js?v=20260828a"></script>
-    <script src="./js/terminal-procesar-stock.js?v=20260828a"></script>
+    <script src="./js/terminal-procesar-stock.js?v=20261013e"></script>
     <script src="./js/terminal-ambientes.js?v=20260828a"></script>
     <script src="./js/terminal-botas-diarias.js?v=20260828a"></script>
     <script src="./js/terminal-buscar-botas.js?v=20260828a"></script>
-    <script src="./js/terminal.js?v=20261001i"></script>
+    <script src="./js/terminal.js?v=20261013a"></script>
 
 </body>
 

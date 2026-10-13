@@ -17,7 +17,13 @@ Por cada bota:
   `id_bota = productos.id` y la cantidad de los dos fondos.
 - Incrementa los contadores de fabricación y pedido en uno.
 
-El nuevo flujo no escribe en palets, trazabilidad antigua ni entradas de flejes.
+PHP descuenta también los tipos FLEJE de la receta (incluidos 40 y 70) por cada
+bota, de las entradas seleccionadas (estado 1), por fecha e ID. Agota y cierra las
+entradas anteriores; la última absorbe el resto y permanece seleccionada aunque
+el saldo sea negativo, como en el flujo anterior. Si falta una entrada seleccionada
+para algún fleje de la receta, toda la fabricación se revierte.
+La carga y selección del menú Fleje usan GET/POST en `api/entradas_flejes.php`,
+sin pasar por Python. El flujo no escribe en palets ni trazabilidad antigua.
 La selección de los lotes permanece activa. Como en el flujo anterior, el consumo
 puede superar el cubicaje registrado (los lotes de fondos pueden partir de cero).
 

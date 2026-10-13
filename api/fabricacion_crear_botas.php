@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/lib/fabricacion_db.php';
+require_once __DIR__ . '/lib/flejes_db.php';
 require_once __DIR__ . '/lib/php_log.php';
 
 // Trabajar en unidades de 0.0001 evita perder consumo al repartir varios lotes.
@@ -89,15 +90,17 @@ function crearBotasFabricacion(PDO $pdo, array $datos): array
         if (count($fondos) !== 1 || (int) $fondos[0]['id'] !== $fondoId) {
             throw new InvalidArgumentException('Debe haber un único lote de fondos seleccionado. Recarga la vista.');
         }
-        $stmt = $pdo->prepare('SELECT c.consumo, tp.tipo FROM consumos c
+        $stmt = $pdo->prepare('SELECT c.consumo, c.consumible_id, tp.tipo FROM consumos c
             JOIN tipos_producto tp ON tp.id = c.consumible_id WHERE c.bota_id = ? ORDER BY c.id');
         $stmt->execute([$linea['tipo_producto_id']]);
         $duela = 0;
         $fondo = 0;
+        $flejes = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $consumo) {
             $tipo = strtoupper($consumo['tipo']);
             if ($tipo === 'DUELA') $duela += fabricacionUnidades((string) $consumo['consumo']);
             if (in_array($tipo, ['FONDO', 'FONDOS'], true)) $fondo += fabricacionUnidades((string) $consumo['consumo']);
+            if ($tipo === 'FLEJE') $flejes[] = $consumo;
         }
         if ($duela <= 0 || $fondo <= 0) {
             throw new InvalidArgumentException('La receta debe tener consumos positivos de duela y fondos.');
@@ -136,6 +139,9 @@ function crearBotasFabricacion(PDO $pdo, array $datos): array
         $codigos = [];
         $productoId = null;
         for ($n = 0; $n < $cantidad; $n++) {
+            foreach ($flejes as $fleje) {
+                consumirFlejesSeleccionados($pdo, (int) $fleje['consumible_id'], (string) $fleje['consumo']);
+            }
             $codigo = $base . sprintf('%05d', ++$contador);
             $producto->execute([$codigo, $linea['tipo_producto_id'], $linea['material_id'], $linea['tostado_id'], $lineaId]);
             $productoId = (int) $pdo->lastInsertId();

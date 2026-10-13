@@ -397,7 +397,8 @@ async function cargarEntradasFlejesMenu() {
 
     tbody.innerHTML = `<tr><td colspan="3">Cargando entradas de fleje...</td></tr>`;
     try {
-        const resp = (await wsRequest("inventario_flejes", {})) || {};
+        const resp = await GET("./api/entradas_flejes.php");
+        if (!resp?.ok) throw new Error(resp?.error || "No se pudo cargar el inventario de flejes.");
         const filas = (resp.inventario_flejes || [])
             .filter((item) => Number(item.estado || 0) < 2)
             .sort((a, b) => {
@@ -454,14 +455,13 @@ async function alternarEstadoEntradaFlejeMenu(fila) {
     fila.classList.add("opacity-50");
 
     try {
-        await wsRequest("modificar_maestro", {
-            tabla: "entradas_flejes",
+        const respuesta = await POST("./api/entradas_flejes.php", {
             id: entradaId,
-            campo: "estado",
-            valor: estadoNuevo,
+            estado: estadoNuevo,
         });
-        fila.dataset.estado = String(estadoNuevo);
-        fila.classList.toggle("fleje-estado-1", estadoNuevo === 1);
+        if (!respuesta?.ok) throw new Error(respuesta?.error || "No se pudo actualizar el estado del fleje.");
+        fila.dataset.estado = String(respuesta.estado);
+        fila.classList.toggle("fleje-estado-1", respuesta.estado === 1);
     } catch (err) {
         console.error("No se pudo actualizar el estado de entrada_fleje:", err);
         alert("No se pudo actualizar el estado del fleje.");
