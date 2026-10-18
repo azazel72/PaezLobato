@@ -397,7 +397,7 @@ async function cargarEntradasFlejesMenu() {
 
     tbody.innerHTML = `<tr><td colspan="3">Cargando entradas de fleje...</td></tr>`;
     try {
-        const resp = await GET("./api/entradas_flejes.php");
+        const resp = await GET("../api/terminal/entradas_flejes.php");
         if (!resp?.ok) throw new Error(resp?.error || "No se pudo cargar el inventario de flejes.");
         const filas = (resp.inventario_flejes || [])
             .filter((item) => Number(item.estado || 0) < 2)
@@ -455,7 +455,7 @@ async function alternarEstadoEntradaFlejeMenu(fila) {
     fila.classList.add("opacity-50");
 
     try {
-        const respuesta = await POST("./api/entradas_flejes.php", {
+        const respuesta = await POST("../api/terminal/entradas_flejes.php", {
             id: entradaId,
             estado: estadoNuevo,
         });

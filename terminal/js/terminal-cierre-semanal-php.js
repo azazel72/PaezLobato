@@ -43,7 +43,7 @@ async function cerrarFabricacionCierrePhp(lineaId, boton) {
     if (!lineaId || boton?.disabled) return;
     boton.disabled = true;
     try {
-        await POST('./api/cerrar_fabricacion_semanal.php', { fabricacion_semanal_id: Number(lineaId) });
+        await POST('../api/terminal/cerrar_fabricacion_semanal.php', { fabricacion_semanal_id: Number(lineaId) });
         cierreSemanalPhp.fabricaciones = cierreSemanalPhp.fabricaciones.filter(linea => Number(linea.id) !== Number(lineaId));
         if (Number(estadoCierreSemanal.lineaId) === Number(lineaId)) estadoCierreSemanal.lineaId = null;
         pintarFabricacionesCierrePhp();
@@ -176,9 +176,9 @@ async function cargarCierreSemanalDesdePhp() {
     document.getElementById("cierre-semanal-fabricaciones").textContent = "Cargando fabricaciones...";
     document.getElementById("cierre-semanal-lotes").textContent = "Cargando lotes...";
     const [fabricaciones, lotes, opcionesProcesado] = await Promise.allSettled([
-        GET("./api/fabricacion.php"),
-        GET("./api/lotes_botas.php"),
-        GET("./api/opciones_procesado.php"),
+        GET("../api/terminal/fabricacion.php"),
+        GET("../api/terminal/lotes_botas.php"),
+        GET("../api/terminal/opciones_procesado.php"),
     ]);
     if (carga !== cierreSemanalPhp.carga || !cierreSemanalPhp.activo) return;
     if (fabricaciones.status === "fulfilled" && fabricaciones.value?.ok && Array.isArray(fabricaciones.value.fabricaciones)) {

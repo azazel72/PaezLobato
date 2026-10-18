@@ -79,7 +79,7 @@ async function seleccionarFabricacionDesdePhp(tarjeta) {
     const lineaId = Number(tarjeta.dataset.lineaId || 0);
     if (!lineaId) return;
     try {
-        const respuesta = await GET(`./api/fabricacion_seleccion.php?id=${encodeURIComponent(lineaId)}`);
+        const respuesta = await GET(`../api/terminal/fabricacion_seleccion.php?id=${encodeURIComponent(lineaId)}`);
         const linea = respuesta?.fabricacion || {};
         lineaFabricacionActualId = lineaId;
         ordenFabricacionActualId = Number(linea.pedido_id || 0) || null;
@@ -113,16 +113,16 @@ async function seleccionarFabricacionDesdePhp(tarjeta) {
 
 async function cambiarEstadoLoteBota(id, estado) {
     if (!id) return;
-    await POST("./api/lotes_botas_estado.php", { id, estado });
-    const respuesta = await GET("./api/lotes_botas.php");
+    await POST("../api/terminal/lotes_botas_estado.php", { id, estado });
+    const respuesta = await GET("../api/terminal/lotes_botas.php");
     lotesBotasMovil = Array.isArray(respuesta?.lotes) ? respuesta.lotes : [];
     pintarLotesBotasDesdePhp();
 }
 
 async function seleccionarLoteFondo(id) {
     if (!id) return;
-    await POST("./api/lotes_fondos_estado.php", { id });
-    const respuesta = await GET("./api/lotes_fondos.php");
+    await POST("../api/terminal/lotes_fondos_estado.php", { id });
+    const respuesta = await GET("../api/terminal/lotes_fondos.php");
     lotesFondosMovil = Array.isArray(respuesta?.lotes) ? respuesta.lotes : [];
     pintarLotesFondosDesdePhp();
 }
@@ -246,9 +246,9 @@ async function cargarFabricacionSemanalActivaFabricacion(opciones = {}) {
     if (!contenedor) return;
     try {
         const [fabricaciones, lotesBotas, lotesFondos] = await Promise.all([
-            GET("./api/fabricacion.php"),
-            GET("./api/lotes_botas.php"),
-            GET("./api/lotes_fondos.php"),
+            GET("../api/terminal/fabricacion.php"),
+            GET("../api/terminal/lotes_botas.php"),
+            GET("../api/terminal/lotes_fondos.php"),
         ]);
         fabricacionesSemanalesMovil = Array.isArray(fabricaciones?.fabricaciones)
             ? fabricaciones.fabricaciones

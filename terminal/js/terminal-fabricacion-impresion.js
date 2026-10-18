@@ -53,9 +53,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function refrescarFabricacionTrasCrearBotas(lineaId) {
     const [botas, fondos, fabricaciones] = await Promise.all([
-        GET("./api/lotes_botas.php"),
-        GET("./api/lotes_fondos.php"),
-        GET("./api/fabricacion.php"),
+        GET("../api/terminal/lotes_botas.php"),
+        GET("../api/terminal/lotes_fondos.php"),
+        GET("../api/terminal/fabricacion.php"),
     ]);
     lotesBotasMovil = botas.lotes || [];
     lotesFondosMovil = fondos.lotes || [];
@@ -89,7 +89,7 @@ async function fabricarEImprimirBotasDesdePhp(opciones = {}) {
     let lineaCreadaId = null;
     let avisoFinal = "";
     try {
-        const respuesta = await POST("./api/fabricacion_crear_botas.php", payload);
+        const respuesta = await POST("../api/terminal/fabricacion_crear_botas.php", payload);
         if (!respuesta?.ok || !Array.isArray(respuesta.codigos) || respuesta.codigos.length !== payload.cantidad_etiquetas) {
             throw new Error(respuesta?.error || "PHP no ha confirmado la creación de las botas. Revisa la respuesta en consola.");
         }

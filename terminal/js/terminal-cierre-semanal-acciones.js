@@ -267,7 +267,7 @@ async function confirmarLotesCierrePhp() {
     borradorLotesCierrePhp.guardando = true;
     pintarLotesCierrePhp();
     try {
-        const url = "./api/cierre_semanal_lotes.php";
+        const url = "../api/terminal/cierre_semanal_lotes.php";
         console.info("[php] POST", url, payload);
         const token = window.SharedAuthToken?.getToken?.();
         const respuesta = await fetch(url, {
@@ -278,7 +278,7 @@ async function confirmarLotesCierrePhp() {
         const datos = await respuesta.json();
         console.info("[php] POST respuesta", url, datos);
         if (!respuesta.ok || !datos.ok || !Array.isArray(datos.lotes)) throw new Error(datos.error || "No se pudieron guardar los cambios.");
-        const recarga = await GET("./api/lotes_botas.php");
+        const recarga = await GET("../api/terminal/lotes_botas.php");
         if (!recarga?.ok || !Array.isArray(recarga.lotes)) {
             throw new Error("Los cambios se guardaron, pero no se pudo recargar la lista de lotes.");
         }

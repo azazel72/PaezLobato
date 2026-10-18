@@ -338,7 +338,7 @@ async function subirArchivoBotaEnvinada() {
         formData.append("entidad_id", String(primeraBota.id));
         formData.append("files[]", archivo);
 
-        const resp = await fetch("./api/upload.php", {
+        const resp = await fetch("../api/archivos/upload.php", {
             method: "POST",
             body: formData,
         });

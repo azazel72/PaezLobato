@@ -33,8 +33,8 @@ async function cargarFormularioProcesarStock() {
     setEstadoProcesarStock('Cargando stock...', 'muted');
     try {
         const [datos, opciones] = await Promise.all([
-            peticionConsumoLotes('./api/procesar_stock.php'),
-            peticionConsumoLotes('./api/opciones_procesado.php'),
+            peticionConsumoLotes('../api/terminal/procesar_stock.php'),
+            peticionConsumoLotes('../api/terminal/opciones_procesado.php'),
         ]);
         terminalProcesarStock.stock = datos.stock;
         terminalProcesarStock.cubicajes = Object.fromEntries(datos.cubicajes.map(item => [String(item.tipo_producto_id), Number(item.cubicaje_estandar)]));
@@ -133,7 +133,7 @@ async function procesarStockDesdeVistaNueva() {
     setEstadoProcesarStock('Procesando stock...', 'muted');
     let respuesta;
     try {
-        respuesta = await peticionConsumoLotes('./api/procesar_stock.php', {
+        respuesta = await peticionConsumoLotes('../api/terminal/procesar_stock.php', {
             origen_id: Number(campoProcesarStock('origen').value),
             ubicacion_id: Number(campoProcesarStock('ubicacion-destino').value),
             codigo_destino: campoProcesarStock('lote-destino').value.trim(),

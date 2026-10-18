@@ -105,7 +105,7 @@ async function cargarConsumoLotes() {
     actualizarFormularioConsumoLotes();
     try {
         await asegurarDatosFabricacionTerminal();
-        const datos = await peticionConsumoLotes('./api/consumo_lotes.php');
+        const datos = await peticionConsumoLotes('../api/terminal/consumo_lotes.php');
         cargarCubicajesConsumoLotes(datos.cubicajes);
         for (const clave of ['stock', 'botas', 'fondos']) {
             if (!Array.isArray(datos[clave])) throw new Error('Respuesta de lotes no válida.');
@@ -139,7 +139,7 @@ async function abrirConsumoLotes() {
     campoConsumoLotes('mensaje').textContent = 'Cargando lotes...';
     const resultados = await Promise.allSettled([
         cargarConsumoLotes(),
-        peticionConsumoLotes('./api/fabricacion.php').then(datos => {
+        peticionConsumoLotes('../api/terminal/fabricacion.php').then(datos => {
             if (typeof renderResumenFabricacionSemanalConsumo === 'function') {
                 renderResumenFabricacionSemanalConsumo(datos.fabricaciones || [], 'consumo-lotes-fabricaciones');
             }
@@ -162,7 +162,7 @@ async function guardarConsumoLotes() {
     actualizarFormularioConsumoLotes();
     let guardado = false;
     try {
-        await peticionConsumoLotes('./api/consumo_lotes.php', datos);
+        await peticionConsumoLotes('../api/terminal/consumo_lotes.php', datos);
         guardado = true;
         if (destino === 'fondos') campoConsumoLotes('fondos').value = '';
         else campoConsumoLotes('nombre').value = '';

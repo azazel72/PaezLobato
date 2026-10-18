@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paez Lobato · Gestión</title>
+  <link rel="icon" href="../imagenes/iconos/tonel.png">
+  <link rel="stylesheet" href="../static/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="../static/css/tabulator.min.css">
+  <link rel="stylesheet" href="vendor/jspanel.css">
+  <link rel="stylesheet" href="css/gestion.css?v=20261013a">
+  <script defer src="../static/js/tabulator.min.js"></script>
+  <script defer src="vendor/jspanel.js"></script>
+  <script defer src="js/gestion.js?v=20261013a"></script>
+</head>
+<body>
+  <aside class="sidebar" aria-label="Menú de gestión">
+    <a class="brand" href="./"><span class="brand-mark">PL</span><span>PAEZ LOBATO<small>GESTIÓN DE TONELERÍA</small></span></a>
+    <div class="nav-label">ESPACIO DE TRABAJO</div>
+    <button class="nav-item active" data-home><i class="bi bi-grid-1x2"></i> Vista general</button>
+    <div class="nav-label">OPERACIONES</div>
+    <button class="nav-item" data-table="lotes"><i class="bi bi-box-seam"></i> Lotes <span class="nav-badge" id="nav-lotes">—</span></button>
+    <div class="nav-label">FICHEROS MAESTROS</div>
+    <button class="nav-item" data-table="proveedores"><i class="bi bi-buildings"></i> Proveedores</button>
+    <button class="nav-item" data-table="materiales"><i class="bi bi-layers"></i> Materiales</button>
+    <button class="nav-item" data-table="ubicaciones"><i class="bi bi-geo-alt"></i> Ubicaciones</button>
+    <div class="nav-label">FORMULARIOS</div>
+    <button class="nav-item" data-form="proveedor"><i class="bi bi-plus-circle"></i> Nuevo proveedor</button>
+    <div class="sidebar-bottom"><span class="connection-dot"></span><span>Nueva gestión<small>Edición de muestra · 01</small></span><a href="../gestion.html" title="Abrir gestión anterior" aria-label="Abrir gestión anterior"><i class="bi bi-box-arrow-up-right"></i></a></div>
+  </aside>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="breadcrumb">Tonelería <span>/</span> <strong id="current-title">Vista general</strong></div>
+      <div class="top-actions"><span id="today"></span><button id="refresh-home" class="icon-button" title="Actualizar resumen" aria-label="Actualizar resumen"><i class="bi bi-arrow-clockwise"></i></button><span class="avatar">PL</span></div>
+    </header>
+    <main id="desktop" aria-label="Escritorio de gestión">
+      <div class="overview">
+        <div class="page-heading"><div><div class="eyebrow">CONTROL DE PRODUCCIÓN</div><h1>Todo en su sitio.</h1><p>Lotes, maestros y operaciones en un mismo espacio de trabajo.</p></div><button class="primary-button" data-table="lotes"><i class="bi bi-box-seam"></i> Abrir lotes <i class="bi bi-arrow-up-right"></i></button></div>
+        <div class="stats">
+          <article class="stat"><div><span>Lotes activos</span><i class="bi bi-box-seam"></i></div><strong id="stat-lotes">—</strong><small>Stock, botas, fondos y almacenado</small></article>
+          <article class="stat"><div><span>Madera disponible</span><i class="bi bi-stack"></i></div><strong id="stat-volumen">—</strong><small>Saldo de stock y almacenado · m³</small></article>
+          <article class="stat"><div><span>Proveedores</span><i class="bi bi-buildings"></i></div><strong id="stat-proveedores">—</strong><small>Fichero de proveedores</small></article>
+          <article class="stat"><div><span>Ubicaciones</span><i class="bi bi-geo-alt"></i></div><strong id="stat-ubicaciones">—</strong><small>Distribución del almacén</small></article>
+        </div>
+        <div class="overview-grid">
+          <section class="overview-card"><div class="card-heading"><div><div class="eyebrow">INVENTARIO</div><h2>Lotes por destino</h2></div><span class="small-badge">Datos actuales</span></div><div id="distribution" class="distribution"><p class="muted">Cargando inventario…</p></div><button class="text-button" data-table="lotes">Consultar todos los lotes <i class="bi bi-arrow-right"></i></button></section>
+          <section class="overview-card shortcuts"><div class="eyebrow">ACCESOS DIRECTOS</div><h2>Empieza por aquí</h2><button data-table="proveedores"><span class="shortcut-icon"><i class="bi bi-buildings"></i></span><span><strong>Proveedores</strong><small>Consulta y edita sus nombres</small></span><i class="bi bi-arrow-up-right"></i></button><button data-table="materiales"><span class="shortcut-icon"><i class="bi bi-layers"></i></span><span><strong>Materiales</strong><small>Organiza las maderas</small></span><i class="bi bi-arrow-up-right"></i></button><button data-form="proveedor"><span class="shortcut-icon orange"><i class="bi bi-plus-lg"></i></span><span><strong>Nuevo proveedor</strong><small>Abre el formulario de alta</small></span><i class="bi bi-arrow-up-right"></i></button></section>
+        </div>
+        <div class="workspace-hint"><i class="bi bi-window-stack"></i><span>Tu escritorio, a tu manera.<small>Abre varias ventanas, muévelas y ajusta su tamaño. Recupera las abiertas desde la barra inferior.</small></span><span class="hint-key">MDI</span></div>
+      </div>
+    </main>
+    <footer class="taskbar"><span class="taskbar-label"><i class="bi bi-window-stack"></i> VENTANAS</span><div id="window-tabs"></div><span id="window-count">0 abiertas</span></footer>
+  </div>
+  <div id="notifications" role="status" aria-live="polite"></div>
+</body>
+</html>
