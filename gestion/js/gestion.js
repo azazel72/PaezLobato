@@ -27,7 +27,8 @@ const definitions = {
 
 async function api(resource, data) {
     const target = data ? (data.accion === 'crear_proveedor' ? 'proveedores' : data.recurso) : resource;
-    const response = await fetch(`../api/gestion/${encodeURIComponent(target)}.php`, {
+    const query = new URLSearchParams({ resource: target, format: 'desktop' });
+    const response = await fetch(`api/router.php?${query}`, {
         method: data ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
         ...(data ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) } : {}),
     });
@@ -81,7 +82,7 @@ function updateTaskbar() {
         button.textContent = entry.title; button.addEventListener('click', () => focusWindow(key)); tabs.append(button);
     }
     document.getElementById('window-count').textContent = `${windows.size} ${windows.size === 1 ? 'abierta' : 'abiertas'}`;
-    document.querySelectorAll('.nav-item').forEach(button => button.classList.toggle('active', activeKey ? button.dataset.table === activeKey || button.dataset.form === activeKey : button.hasAttribute('data-home')));
+    document.querySelectorAll('.nav-item').forEach(button => button.classList.toggle('active', activeKey ? button.dataset.table === activeKey || button.dataset.view === activeKey : button.hasAttribute('data-home')));
     document.getElementById('current-title').textContent = windows.get(activeKey)?.title || 'Vista general';
 }
 
@@ -104,7 +105,12 @@ function createWindow(key, title, icon, content, narrow = false) {
         theme: 'light', borderRadius: '9px',
         panelSize: { width, height }, content,
         position: { my: 'left-top', at: 'left-top', offsetX: Math.min(24 + offset, Math.max(0, area.width - width)), offsetY: Math.min(24 + offset, Math.max(0, area.height - height)) },
-        dragit: { containment: 0 }, resizeit: { containment: 0, minWidth: Math.min(340, area.width - 20), minHeight: 200 },
+        dragit: {
+            containment: 0,
+            start: panel => panel.classList.add('window-dragging'),
+            stop: panel => panel.classList.remove('window-dragging'),
+        },
+        resizeit: { containment: 0, minWidth: Math.min(340, area.width - 20), minHeight: 200 },
         maximizedMargin: 8, minimizeTo: false, headerControls: { smallify: 'remove' },
         onwindowresize: true,
         onfronted: () => { activeKey = key; updateTaskbar(); },
@@ -134,27 +140,48 @@ function openTable(resource) {
     if (!definition) return;
     if (windows.has(resource)) { focusWindow(resource); return; }
     const content = document.createElement('div'); content.className = 'window-content';
-    content.innerHTML = '<div class="window-toolbar"><input class="search-input" type="search" placeholder="Buscar en este listado…" aria-label="Buscar en el listado"><span class="table-hint"></span><button class="icon-button" type="button" aria-label="Actualizar listado" title="Actualizar listado"><i class="bi bi-arrow-clockwise"></i></button></div><div class="table-host"></div><div class="window-footer"><span class="row-count">Cargando…</span><span class="save-state">Conectando con PHP…</span></div>';
+    content.innerHTML = '<div class="window-toolbar"><input class="search-input" type="search" placeholder="Buscar en este listado…" aria-label="Buscar en el listado"><button class="icon-button" type="button" aria-label="Actualizar listado" title="Actualizar listado"><i class="bi bi-arrow-clockwise"></i></button></div><div class="table-host"></div><div class="window-footer"><span class="row-count">Cargando…</span><span class="table-hint"></span><span class="footer-status"><span class="save-state" role="status">Conectando con PHP…</span><span class="last-updated"></span></span></div>';
     content.querySelector('.table-hint').textContent = definition.hint;
     const entry = createWindow(resource, definition.title, definition.icon, content); if (!entry) return;
     const saveState = content.querySelector('.save-state');
     const refresh = content.querySelector('.icon-button');
+    const master = gestionMaestros.recursos.includes(resource);
+    const columns = definition.fields.map(field => ({ ...field, ...(field.editor ? { editable: cell => !cell.getElement().classList.contains('saving'), validator: ['required', `maxLength:${resource === 'proveedores' ? 128 : 60}`] } : {}) }));
     const table = new Tabulator(content.querySelector('.table-host'), {
         height: '100%', layout: 'fitColumns', editTriggerEvent: 'click',
         placeholder: 'No hay registros en este listado.', index: 'id',
         columnDefaults: { formatter: 'plaintext', resizable: true, vertAlign: 'middle' },
-        columns: definition.fields.map(field => ({ ...field, ...(field.editor ? { editable: cell => !cell.getElement().classList.contains('saving'), validator: ['required', `maxLength:${resource === 'proveedores' ? 128 : 60}`] } : {}) })),
+        columns: master ? gestionMaestros.columns(entry, columns, row => gestionMaestros.remove(resource, entry, row), row => GestionUI.editOriginal(resource, entry, row)) : [...columns, {
+            title: 'Acciones', width: 85, frozen: true, headerSort: false,
+            formatter: cell => {
+                const pencil = GestionUI.button('pencil', 'Editar registro', () => gestionMaestros.editLot(entry, cell.getRow().getData()));
+                pencil.disabled = !!entry.pending || !!entry.loading; return pencil;
+            },
+        }],
     });
     entry.table = table;
+    if (master) gestionMaestros.attach(resource, entry, content);
+    entry.actions = document.createElement('div'); entry.actions.className = 'data-actions';
+    content.querySelector('.window-toolbar').classList.add('data-toolbar');
+    content.querySelector('.window-toolbar').append(entry.actions);
+    entry.label = (field, value) => resource === 'lotes' && field === 'estado' ? ({ 0: 'Disponible', 1: 'Seleccionado', 2: 'Finalizado' })[value] || 'Sin estado' : value;
+    GestionUI.exports(entry, resource);
     entry.reload = async () => {
         if (entry.pending) { notify('Espera a que se guarden los cambios antes de actualizar.'); return; }
-        refresh.disabled = true; saveState.textContent = 'Cargando…';
+        if (entry.loading) return;
+        entry.loading = true; refresh.disabled = true; saveState.textContent = 'Cargando…';
         try {
             const result = await api(resource);
             if (!windows.has(resource)) return;
+            entry.instalaciones = result.instalaciones || [];
             await table.replaceData(result.filas); saveState.textContent = 'Datos actualizados';
+            const updatedAt = new Date();
+            const stamp = new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' }).format(updatedAt);
+            const updatedLabel = content.querySelector('.last-updated');
+            updatedLabel.textContent = stamp;
+            updatedLabel.title = `Última carga del listado: ${new Intl.DateTimeFormat('es-ES', { dateStyle: 'full', timeStyle: 'long', timeZone: 'Europe/Madrid' }).format(updatedAt)}`;
         } catch (error) { saveState.textContent = 'Error de carga'; notify(error.message, true); }
-        finally { refresh.disabled = false; }
+        finally { entry.loading = false; refresh.disabled = false; if (windows.get(resource) === entry) table.redraw(true); }
     };
     table.on('tableBuilt', entry.reload);
     table.on('dataFiltered', (_, rows) => { content.querySelector('.row-count').textContent = `${rows.length} registros`; });
@@ -181,28 +208,8 @@ function openTable(resource) {
     entry.observer.observe(content.querySelector('.table-host'));
 }
 
-function openProviderForm() {
-    const key = 'proveedor';
-    if (windows.has(key)) { focusWindow(key); return; }
-    const form = document.createElement('form'); form.className = 'provider-form';
-    form.innerHTML = '<div class="form-intro"><span class="shortcut-icon orange"><i class="bi bi-buildings"></i></span><div><h2>Un nuevo proveedor</h2><p>Añádelo al fichero de la tonelería.</p></div></div><label for="provider-name">Nombre del proveedor</label><input id="provider-name" name="nombre" required maxlength="128" autocomplete="organization" placeholder="Ej. Maderas del Norte"><p class="form-help">Este nombre se mostrará en los listados y formularios.</p><div class="form-actions"><button class="primary-button" type="submit"><i class="bi bi-plus-lg"></i> Crear proveedor</button><span class="form-status" role="status"></span></div>';
-    const entry = createWindow(key, 'Nuevo proveedor', 'plus-circle', form, true); if (!entry) return;
-    form.addEventListener('submit', async event => {
-        event.preventDefault(); if (entry.pending || !form.reportValidity()) return;
-        entry.pending++; const button = form.querySelector('button'); button.disabled = true;
-        const status = form.querySelector('.form-status'); status.textContent = 'Guardando…';
-        try {
-            const result = await api(null, { accion: 'crear_proveedor', nombre: form.elements.nombre.value.trim() });
-            form.reset(); status.textContent = 'Proveedor creado'; notify(`Proveedor ${result.nombre} creado.`);
-            await windows.get('proveedores')?.reload?.(); void loadOverview();
-        } catch (error) { status.textContent = 'No se pudo guardar'; notify(error.message, true); }
-        finally { entry.pending--; button.disabled = false; }
-    });
-    form.elements.nombre.focus();
-}
-
 document.querySelectorAll('[data-table]').forEach(button => button.addEventListener('click', () => openTable(button.dataset.table)));
-document.querySelectorAll('[data-form]').forEach(button => button.addEventListener('click', openProviderForm));
+
 document.querySelector('[data-home]').addEventListener('click', () => {
     for (const entry of windows.values()) if (entry.panel.status !== 'minimized') entry.panel.minimize();
     activeKey = null; updateTaskbar();

@@ -8,24 +8,126 @@
   <link rel="stylesheet" href="../static/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../static/css/tabulator.min.css">
   <link rel="stylesheet" href="vendor/jspanel.css">
-  <link rel="stylesheet" href="css/gestion.css?v=20261013a">
+  <link rel="stylesheet" href="css/gestion.css?v=20261018d">
+  <link rel="stylesheet" href="css/modulos.css?v=20261018c">
+  <link rel="stylesheet" href="css/cuadrante-completo.css?v=20261019f">
+  <link rel="stylesheet" href="css/listados.css?v=20261019a">
+  <link rel="stylesheet" href="css/navegacion.css?v=20261019a">
   <script defer src="../static/js/tabulator.min.js"></script>
+  <script defer src="../static/js/xlsx.full.min.js"></script>
+  <script defer src="../static/js/jspdf.umd.min.js"></script>
+  <script defer src="../static/js/jspdf.plugin.autotable.min.js"></script>
   <script defer src="vendor/jspanel.js"></script>
-  <script defer src="js/gestion.js?v=20261013a"></script>
+  <script defer src="js/maestros.js?v=20261018d"></script>
+  <script defer src="js/gestion.js?v=20261019c"></script>
+  <script defer src="js/ui-datos.js?v=20261019e"></script>
+  <script defer src="js/maestros-catalogo.js?v=20261018a"></script>
+  <script defer src="js/pedidos.js?v=20261018a"></script>
+  <script defer src="js/fabricacion-semanal.js?v=20261018a"></script>
+  <script defer src="js/cuadrante-completo-modelo.js?v=20261018a"></script>
+  <script defer src="js/cuadrante-anchuras.js?v=20261019d"></script>
+  <script defer src="js/cuadrante-completo.js?v=20261019d"></script>
+  <script defer src="js/listados-exportar.js?v=20261019c"></script>
+  <script defer src="js/listados.js?v=20261019b"></script>
+  <link rel="stylesheet" href="css/operaciones.css?v=20261019e">
+  <script defer src="js/operaciones.js?v=20261019e"></script>
+  <script defer src="js/paneles.js?v=20261019e"></script>
+  <script defer src="js/archivos-entidad.js?v=20261019e"></script>
+  <script defer src="js/ambiente.js?v=20261019e"></script>
+  <script defer src="js/entradas.js?v=20261019e"></script>
+  <script defer src="js/lineas-entrada.js?v=20261019e"></script>
+  <script defer src="js/entradas-flejes.js?v=20261019e"></script>
+  <script defer src="js/analiticas.js?v=20261019e"></script>
+  <script defer src="js/palets.js?v=20261019e"></script>
+  <script defer src="js/productos.js?v=20261019e"></script>
+  <script defer src="js/trazabilidad-procesado.js?v=20261019e"></script>
+  <script defer src="js/trazabilidad-fabricacion.js?v=20261019e"></script>
+  <script defer src="js/trazabilidad-producto.js?v=20261019e"></script>
+  <script defer src="js/consumos.js?v=20261019e"></script>
+  <script defer src="js/consumos-producto.js?v=20261019g"></script>
+  <script defer src="js/cubicaje.js?v=20261019e"></script>
+  <script defer src="js/planificacion-entradas.js?v=20261019e"></script>
+  <script defer src="js/entradas-planificadas.js?v=20261019e"></script>
+  <script defer src="js/planificacion-pedidos.js?v=20261019e"></script>
+  <script defer src="js/documentos-envinados.js?v=20261019e"></script>
+  <script defer src="js/navegacion.js?v=20261019g"></script>
 </head>
 <body>
   <aside class="sidebar" aria-label="Menú de gestión">
     <a class="brand" href="./"><span class="brand-mark">PL</span><span>PAEZ LOBATO<small>GESTIÓN DE TONELERÍA</small></span></a>
-    <div class="nav-label">ESPACIO DE TRABAJO</div>
-    <button class="nav-item active" data-home><i class="bi bi-grid-1x2"></i> Vista general</button>
-    <div class="nav-label">OPERACIONES</div>
-    <button class="nav-item" data-table="lotes"><i class="bi bi-box-seam"></i> Lotes <span class="nav-badge" id="nav-lotes">—</span></button>
-    <div class="nav-label">FICHEROS MAESTROS</div>
-    <button class="nav-item" data-table="proveedores"><i class="bi bi-buildings"></i> Proveedores</button>
-    <button class="nav-item" data-table="materiales"><i class="bi bi-layers"></i> Materiales</button>
-    <button class="nav-item" data-table="ubicaciones"><i class="bi bi-geo-alt"></i> Ubicaciones</button>
-    <div class="nav-label">FORMULARIOS</div>
-    <button class="nav-item" data-form="proveedor"><i class="bi bi-plus-circle"></i> Nuevo proveedor</button>
+    <nav class="sidebar-nav" aria-label="Módulos de gestión">
+      <button class="nav-item active" data-home><i class="bi bi-grid-1x2"></i> Vista general</button>
+      <details>
+        <summary class="nav-category" title="Ficheros maestros"><i class="bi bi-folder2" aria-hidden="true"></i><span>Ficheros maestros</span></summary>
+        <button class="nav-item" data-table="proveedores"><i class="bi bi-buildings"></i> Proveedores</button>
+        <button class="nav-item" data-view="clientes"><i class="bi bi-person-vcard"></i> Clientes</button>
+        <hr class="nav-divider">
+        <button class="nav-item" data-view="instalaciones"><i class="bi bi-houses"></i> Instalaciones</button>
+        <button class="nav-item" data-table="ubicaciones"><i class="bi bi-geo-alt"></i> Ubicaciones</button>
+        <hr class="nav-divider">
+        <button class="nav-item" data-view="usuarios"><i class="bi bi-people"></i> Usuarios</button>
+        <button class="nav-item" data-view="roles"><i class="bi bi-person-badge"></i> Roles</button>
+        <button class="nav-item" data-view="puestos_trabajo"><i class="bi bi-person-workspace"></i> Puestos de trabajo</button>
+        <hr class="nav-divider">
+        <button class="nav-item" data-table="materiales"><i class="bi bi-layers"></i> Materiales</button>
+        <button class="nav-item" data-view="tostados"><i class="bi bi-fire"></i> Tostados</button>
+        <button class="nav-item" data-view="dias_festivos"><i class="bi bi-calendar-event"></i> Días festivos</button>
+        <hr class="nav-divider">
+        <button class="nav-item" data-view="archivos_subidos"><i class="bi bi-paperclip"></i> Archivos subidos</button>
+      </details>
+      <details>
+        <summary class="nav-category" title="Ambiente"><i class="bi bi-thermometer-half" aria-hidden="true"></i><span>Ambiente</span></summary>
+        <button class="nav-item" data-view="ambientes"><i class="bi bi-thermometer-half"></i> Ver ambiente</button>
+      </details>
+      <details>
+        <summary class="nav-category" title="Entradas"><i class="bi bi-box-arrow-in-down" aria-hidden="true"></i><span>Entradas</span></summary>
+        <button class="nav-item" data-view="planificacion_entradas"><i class="bi bi-calendar3"></i> Planificación de entradas</button>
+        <button class="nav-item" data-view="entradas"><i class="bi bi-bag-check"></i> Entradas</button>
+        <button class="nav-item" data-view="lineas_entrada"><i class="bi bi-list-check"></i> Líneas de entrada</button>
+        <button class="nav-item" data-view="entradas_flejes"><i class="bi bi-bounding-box-circles"></i> Entradas de flejes</button>
+        <hr class="nav-divider">
+        <button class="nav-item" data-table="lotes"><i class="bi bi-box-seam"></i> Lotes <span class="nav-badge" id="nav-lotes">—</span></button>
+        <button class="nav-item" data-view="cuadrantes"><i class="bi bi-calendar2-week"></i> Cuadrante</button>
+      </details>
+      <details>
+        <summary class="nav-category" title="Fabricación"><i class="bi bi-tools" aria-hidden="true"></i><span>Fabricación</span></summary>
+        <button class="nav-item" data-view="planificacion_pedidos"><i class="bi bi-diagram-3"></i> Planificación de pedidos</button>
+        <hr class="nav-divider">
+        <button class="nav-item" data-view="pedidos"><i class="bi bi-clipboard-check"></i> Pedidos</button>
+        <button class="nav-item" data-view="analiticas"><i class="bi bi-clipboard2-pulse"></i> Analíticas de vino</button>
+        <button class="nav-item" data-view="tipos_producto"><i class="bi bi-tags"></i> Tipos de producto</button>
+        <button class="nav-item" data-view="fabricacion_semanal"><i class="bi bi-calendar-week"></i> Fabricación semanal</button>
+        <hr class="nav-divider">
+        <button class="nav-item" data-view="trazabilidad_procesado"><i class="bi bi-arrow-left-right"></i> Trazabilidad de procesado</button>
+        <button class="nav-item" data-view="trazabilidad_fabricacion"><i class="bi bi-diagram-3"></i> Trazabilidad de fabricación</button>
+        <button class="nav-item" data-view="trazabilidad_producto"><i class="bi bi-link-45deg"></i> Trazabilidad de producto</button>
+        <hr class="nav-divider">
+        <button class="nav-item" data-view="consumos"><i class="bi bi-bezier2"></i> Consumos</button>
+        <button class="nav-item" data-view="a_consumos"><i class="bi bi-clipboard-data"></i> Consumos por producto</button>
+        <button class="nav-item" data-view="documentos_envinados"><i class="bi bi-images"></i> Documentos botas envinadas</button>
+        <button class="nav-item" data-view="palets"><i class="bi bi-boxes"></i> Palets</button>
+        <button class="nav-item" data-view="productos"><i class="bi bi-tags"></i> Productos</button>
+        <button class="nav-item" data-view="cubicaje"><i class="bi bi-rulers"></i> Cubicaje estándar</button>
+      </details>
+      <details>
+        <summary class="nav-category" title="Listados"><i class="bi bi-bar-chart" aria-hidden="true"></i><span>Listados</span></summary>
+        <button class="nav-item" data-view="inventario_flejes"><i class="bi bi-bar-chart"></i> Inventario de flejes</button>
+        <button class="nav-item" data-view="inventario_maderas"><i class="bi bi-stack"></i> Inventario de maderas</button>
+        <button class="nav-item" data-view="asistencias_mensuales"><i class="bi bi-calendar-check"></i> Asistencias mensuales</button>
+      </details>
+      <details>
+        <summary class="nav-category" title="Admin"><i class="bi bi-gear" aria-hidden="true"></i><span>Admin</span></summary>
+      <details>
+        <summary class="nav-category nav-subcategory" title="Estados"><i class="bi bi-toggles" aria-hidden="true"></i><span>Estados</span></summary>
+        <button class="nav-item" data-view="estados_pedidos"><i class="bi bi-circle"></i> Estados de pedidos</button>
+        <button class="nav-item" data-view="estados_fabricacion_semanal"><i class="bi bi-circle"></i> Estados de fabricación</button>
+        <button class="nav-item" data-view="estados_productos"><i class="bi bi-circle"></i> Estados de productos</button>
+        <button class="nav-item" data-view="estados_flejes"><i class="bi bi-circle"></i> Estados de flejes</button>
+        <button class="nav-item" data-view="estados_trazabilidad_fabricacion"><i class="bi bi-circle"></i> Estados de trazabilidad</button>
+        <button class="nav-item" data-view="estados_palets"><i class="bi bi-circle"></i> Estados de palets</button>
+      </details>
+      </details>
+    </nav>
     <div class="sidebar-bottom"><span class="connection-dot"></span><span>Nueva gestión<small>Edición de muestra · 01</small></span><a href="../gestion.html" title="Abrir gestión anterior" aria-label="Abrir gestión anterior"><i class="bi bi-box-arrow-up-right"></i></a></div>
   </aside>
   <div class="app-shell">
@@ -44,7 +146,7 @@
         </div>
         <div class="overview-grid">
           <section class="overview-card"><div class="card-heading"><div><div class="eyebrow">INVENTARIO</div><h2>Lotes por destino</h2></div><span class="small-badge">Datos actuales</span></div><div id="distribution" class="distribution"><p class="muted">Cargando inventario…</p></div><button class="text-button" data-table="lotes">Consultar todos los lotes <i class="bi bi-arrow-right"></i></button></section>
-          <section class="overview-card shortcuts"><div class="eyebrow">ACCESOS DIRECTOS</div><h2>Empieza por aquí</h2><button data-table="proveedores"><span class="shortcut-icon"><i class="bi bi-buildings"></i></span><span><strong>Proveedores</strong><small>Consulta y edita sus nombres</small></span><i class="bi bi-arrow-up-right"></i></button><button data-table="materiales"><span class="shortcut-icon"><i class="bi bi-layers"></i></span><span><strong>Materiales</strong><small>Organiza las maderas</small></span><i class="bi bi-arrow-up-right"></i></button><button data-form="proveedor"><span class="shortcut-icon orange"><i class="bi bi-plus-lg"></i></span><span><strong>Nuevo proveedor</strong><small>Abre el formulario de alta</small></span><i class="bi bi-arrow-up-right"></i></button></section>
+          <section class="overview-card shortcuts"><div class="eyebrow">ACCESOS DIRECTOS</div><h2>Empieza por aquí</h2><button data-table="proveedores"><span class="shortcut-icon"><i class="bi bi-buildings"></i></span><span><strong>Proveedores</strong><small>Consulta y edita sus nombres</small></span><i class="bi bi-arrow-up-right"></i></button><button data-table="materiales"><span class="shortcut-icon"><i class="bi bi-layers"></i></span><span><strong>Materiales</strong><small>Organiza las maderas</small></span><i class="bi bi-arrow-up-right"></i></button><button data-view="pedidos"><span class="shortcut-icon orange"><i class="bi bi-clipboard-check"></i></span><span><strong>Pedidos</strong><small>Consulta pedidos y su fabricación</small></span><i class="bi bi-arrow-up-right"></i></button></section>
         </div>
         <div class="workspace-hint"><i class="bi bi-window-stack"></i><span>Tu escritorio, a tu manera.<small>Abre varias ventanas, muévelas y ajusta su tamaño. Recupera las abiertas desde la barra inferior.</small></span><span class="hint-key">MDI</span></div>
       </div>

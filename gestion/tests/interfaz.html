@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es"><meta charset="utf-8"><title>Prueba de ventanas de gestión</title>
+<style>iframe{width:1500px;height:950px;border:0}pre{white-space:pre-wrap}</style>
+<pre id="result">Comprobando ventanas y formularios mediante consultas; no se guardan registros.</pre>
+<iframe src="../index.html" title="Nueva gestión"></iframe>
+<script>
+const frame = document.querySelector('iframe');
+frame.addEventListener('load', async () => {
+    const output = document.getElementById('result'); const log = []; const errors = [];
+    const app = frame.contentWindow;
+    app.addEventListener('error', event => errors.push(event.error?.stack || event.message));
+    app.addEventListener('unhandledrejection', event => errors.push(String(event.reason)));
+    const check = (value, message) => { if (!value) throw new Error(message); };
+    const run = code => app.eval(code);
+    const closeAll = () => { for (const entry of [...run('windows').values()].reverse()) entry.panel.close(); };
+    try {
+        const preview = new URLSearchParams(location.search).get('preview');
+        if (preview && /^[a-z_]+$/.test(preview) && run(`!!GestionVistasOperaciones['${preview}']`)) {
+            await run(`GestionVistasOperaciones['${preview}'].open()`); output.textContent = `Vista de prueba: ${preview}`; return;
+        }
+        check(app.document.querySelectorAll('.nav-divider').length >= 7, 'Faltan separadores');
+        check([...app.document.querySelectorAll('.sidebar-nav details')].every(element => !element.open), 'Categorías abiertas por defecto');
+        const resources = ['ambientes', 'entradas', 'lineas_entrada', 'entradas_flejes', 'analiticas', 'palets', 'productos', 'trazabilidad_procesado', 'trazabilidad_fabricacion', 'trazabilidad_producto', 'consumos', 'a_consumos', 'cubicaje'];
+        for (const resource of resources) {
+            await run(`GestionVistasOperaciones['${resource}'].open()`);
+            const entry = run('windows').get(resource);
+            check(entry?.table, `${resource}: tabla no creada`);
+            check(!entry.content.querySelector('.save-state').textContent.includes('Error'), `${resource}: error de carga`);
+            check(entry.actions.querySelector('[title="Exportar Excel (.xls)"]'), `${resource}: falta XLS`);
+            check(entry.actions.querySelector('[title="Exportar PDF"]'), `${resource}: falta PDF`);
+            entry.actions.querySelector('[title="Crear registro"]').click();
+            const form = run('windows').get(`${resource}-crear`);
+            check(form, `${resource}: formulario no creado`);
+            const inputs = form.panel.content.querySelectorAll('input, select'); check(inputs.length > 0, `${resource}: formulario vacío`);
+            if (resource === 'ambientes') check(form.panel.content.querySelector('[name="temperatura_1"]').step === '0.01', 'No admite decimales');
+            closeAll(); log.push(`OK ${resource}: consulta, formulario, XLS y PDF`);
+        }
+        for (const key of ['planificacion_entradas', 'planificacion_pedidos']) {
+            await run(`GestionVistasOperaciones['${key}'].open()`);
+            const entry = run('windows').get(key);
+            check(entry?.parts.length === (key === 'planificacion_entradas' ? 3 : 2), `${key}: paneles incompletos`);
+            check(entry.parts.every(part => part.table && !part.content.querySelector('.save-state').textContent.includes('Error')), `${key}: error de consulta`);
+            if (key === 'planificacion_entradas') check(run('GestionListadosExportar').tableSnapshot(entry.parts[0]).columns.some(column => column.field === 'dic_confirmado' && column.title.includes('Diciembre')), 'Faltan meses en la exportación');
+            entry.parts[0].actions.querySelector('[title="Crear registro"]').click();
+            check([...run('windows').keys()].some(id => id.endsWith('-crear')), `${key}: formulario no creado`);
+            closeAll(); log.push(`OK ${key}: paneles y formulario`);
+        }
+        await run('GestionEntradasPlanificadas.open(null, 2026)');
+        check(run('windows').get('entradas_planificadas')?.parts.every(part => part.table), 'Entradas por proveedor: paneles incompletos'); closeAll();
+        await run('GestionDocumentosEnvinados.open()');
+        const docs = run('windows').get('documentos_envinados'); check(docs?.table && !docs.content.querySelector('.save-state').textContent.includes('Error'), 'Documentos: no carga'); closeAll();
+        check(errors.length === 0, errors.join('\n'));
+        output.textContent = 'PASS\n' + log.join('\n') + '\nOK entradas del proveedor y documentos\nSin escrituras en la BBDD.';
+    } catch (error) { output.textContent = 'FAIL\n' + log.join('\n') + '\n' + error.stack + '\n' + errors.join('\n'); }
+    document.documentElement.dataset.done = 'true';
+});
+</script></html>
