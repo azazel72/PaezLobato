@@ -14,7 +14,7 @@ const context = vm.createContext({ document: {
     querySelectorAll: () => elements,
     addEventListener: (_, callback) => { listener = callback; },
 } });
-vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../js/perfiles.js'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../gestion/js/perfiles.js'), 'utf8'), context);
 const profiles = vm.runInContext('GestionPerfiles', context);
 assert(elements.every(element => !element.hidden), 'Sin perfil se conserva el acceso inicial');
 profiles.establecerPerfil({ administrador: '0', planificacion: '0', fabricacion: '1' });

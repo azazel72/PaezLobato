@@ -18,7 +18,7 @@ const contexto = {
     },
 };
 vm.createContext(contexto);
-vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/terminal-cierre-semanal-acciones.js'), 'utf8'), contexto);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../terminal/js/terminal-cierre-semanal-acciones.js'), 'utf8'), contexto);
 const snapshot = () => JSON.stringify(contexto.cierreSemanalPhp.lotes);
 const consumo = id => contexto.cierreSemanalPhp.lotes.find(l => l.id === id).consumido;
 (async () => {

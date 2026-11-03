@@ -41,7 +41,7 @@ const contexto = {
 };
 vm.createContext(contexto);
 for (const archivo of ['terminal-consumo-lotes.js','terminal-procesar-stock.js']) {
-    vm.runInContext(fs.readFileSync(path.join(__dirname,'../js',archivo),'utf8'),contexto);
+    vm.runInContext(fs.readFileSync(path.join(__dirname,'../terminal/js',archivo),'utf8'),contexto);
 }
 const valor = nombre => campos[`procesarstock-${nombre}`];
 (async () => {

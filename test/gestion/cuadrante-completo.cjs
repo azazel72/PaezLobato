@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
 const context = vm.createContext({});
-vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/cuadrante-completo-modelo.js'), 'utf8') + '\nglobalThis.model = CuadranteCompletoModelo;', context);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../gestion/js/cuadrante-completo-modelo.js'), 'utf8') + '\nglobalThis.model = CuadranteCompletoModelo;', context);
 const m = context.model;
 const state = {
  inicio: '2026-10-15', festivos: ['2026-10-16'],

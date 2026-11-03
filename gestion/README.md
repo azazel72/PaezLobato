@@ -18,7 +18,7 @@ Esta capa controla la interfaz; la autorización de datos en PHP deberá conecta
 a la futura sesión autenticada antes de usarla como control de acceso efectivo.
 No se modifican roles ni privilegios almacenados en la BBDD.
 
-Comprobación: `node gestion/tests/perfiles.cjs`.
+Comprobación: `node test/gestion/perfiles.cjs`.
 
 Abrir `/paezlobato_nuevo/gestion/` cuando el proyecto esté dentro de esa carpeta,
 o `/gestion/` si la raíz del sitio es el repositorio. Apache sirve `index.html`.
@@ -145,7 +145,7 @@ La leyenda mensual usa «Enero 2026 · 01/01/2026 a 31/01/2026 · Laborables: 22
 Las exportaciones incluyen todos los datos filtrados, aun con grupos plegados,
 y conservan cabeceras de grupo con sus totales. Excel conserva valores numéricos.
 Estas funciones se definen en `js/listados.js`, `js/listados-exportar.js` y
-`css/listados.css`. `node gestion/tests/listados.cjs` verifica agrupaciones,
+`css/listados.css`. `node test/gestion/listados.cjs` verifica agrupaciones,
 totales, leyendas y generación real de XLS/XLSX/PDF, además de CSV e impresión.
 
 Todos los listados de datos (lotes, maestros, estados, pedidos y fabricación
@@ -165,11 +165,11 @@ modificarlos. Las subidas admiten hasta 15 MB, sujetas al límite de PHP.
 
 ## Verificación
 
-`C:\xampp\php\php.exe gestion/tests/backend.php` comprueba CRUD, validación,
+`C:\xampp\php\php.exe test/gestion/backend.php` comprueba CRUD, validación,
 referencias, contraseñas, conflictos, pedido/fabricación y cuadrantes/asistencia.
 Crea tablas TEMPORARY que ocultan las tablas reales solo en esa conexión. Las
 escrituras de las pruebas no alteran datos, secuencias ni esquema permanentes.
-`node gestion/tests/edicion-tabla.cjs` prueba los editores, combos, cancelación,
+`node test/gestion/edicion-tabla.cjs` prueba los editores, combos, cancelación,
 guardado con versión y restauración ante errores sin navegador ni BBDD.
 
 Se verificaron además las consultas de todos los recursos y la respuesta HTTP.

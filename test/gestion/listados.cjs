@@ -24,7 +24,7 @@ const context = vm.createContext({
  XLSX: { ...XLSX, writeFile: (book, filename, options) => { bookFilename = filename; bookBytes = Buffer.from(XLSX.write(book, { type: 'buffer', bookType: options?.bookType || 'xlsx' })); } },
  jspdf: { jsPDF: PDF }, Blob, URL: { createObjectURL: blob => { csvBlob = blob; return 'blob:test'; }, revokeObjectURL() {} }, setTimeout: callback => callback(),
 });
-for (const name of ['listados.js', 'listados-exportar.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../js', name), 'utf8'), context);
+for (const name of ['listados.js', 'listados-exportar.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../../gestion/js', name), 'utf8'), context);
 vm.runInContext('globalThis.reports=GestionListados;globalThis.exporter=GestionListadosExportar;', context);
 const reports = context.reports, exporter = context.exporter;
 const columns = reports.columns('inventario_maderas', {});
@@ -108,7 +108,7 @@ console.log('OK: plegar y desplegar todos los grupos, incluidos anidados, con re
  assert.equal(tableRows.at(-1)[0], 'Cliente visible'); assert.equal(tableRows.at(-1)[1], 12.5);
  exporter.exportSnapshot(tableSnapshot, 'pedidos', 'pdf'); assert.equal(pdfBytes.subarray(0, 4).toString(), '%PDF');
 
- for (const name of ['cuadrante-completo-modelo.js', 'cuadrante-completo.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../js', name), 'utf8'), context);
+ for (const name of ['cuadrante-completo-modelo.js', 'cuadrante-completo.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../../gestion/js', name), 'utf8'), context);
  vm.runInContext('globalThis.quadrant = GestionCuadranteCompleto;', context);
  const week = { state: { inicio: '2026-10-15', fin: '2026-10-21', festivos: ['2026-10-16'], usuarios: [{ id: 1, nombre: 'Ana', activo: 1 }], puestos: [{ id: 1, nombre: 'Batidero', activo: 1, orden: 1 }], details: [{ puesto_id: 1, usuario_id: 1, fecha: '2026-10-15' }] } };
  context.quadrant.action(week, 'xls'); assert.equal(bookFilename, 'cuadrante_2026-10-15.xls');

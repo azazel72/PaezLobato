@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
-require_once __DIR__ . '/../api/router.php';
+require_once __DIR__ . '/../../gestion/api/router.php';
 function ccCheck(bool $ok, string $message): void { if (!$ok) throw new RuntimeException($message); }
 function ccReject(callable $fn, string $message): void { try { $fn(); } catch (InvalidArgumentException $e) { return; } throw new RuntimeException($message); }
 $pdo = fabricacionPdo();

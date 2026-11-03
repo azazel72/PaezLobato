@@ -37,7 +37,7 @@ const contexto = {
     wsRequest() { throw new Error('Los flejes no deben llamar a Python'); },
 };
 vm.createContext(contexto);
-const terminal = fs.readFileSync(path.join(__dirname, '../js/terminal.js'), 'utf8');
+const terminal = fs.readFileSync(path.join(__dirname, '../terminal/js/terminal.js'), 'utf8');
 vm.runInContext(terminal.slice(terminal.indexOf('function prepararEventosMenuFlejes()'),
     terminal.indexOf('function routeMessage(data)')), contexto);
 (async () => {

@@ -54,11 +54,11 @@ El SQL es repetible y no cambia la versión de la BBDD.
 Desde la raíz del proyecto:
 
 ```powershell
-C:\xampp\php\php.exe gestion/tests/operaciones.php
-C:\xampp\php\php.exe gestion/tests/backend.php
-C:\xampp\php\php.exe gestion/tests/cuadrante-completo.php
-node gestion/tests/edicion-tabla.cjs
-node gestion/tests/listados.cjs
+C:\xampp\php\php.exe test/gestion/operaciones.php
+C:\xampp\php\php.exe test/gestion/backend.php
+C:\xampp\php\php.exe test/gestion/cuadrante-completo.php
+node test/gestion/edicion-tabla.cjs
+node test/gestion/listados.cjs
 ```
 
 Las pruebas de PHP escriben exclusivamente en tablas TEMPORARY de su propia
@@ -66,6 +66,6 @@ conexión, creadas con LIKE y comprobadas antes de escribir; no copian triggers.
 Verifican operaciones completas, validación, rollback, versiones y relaciones.
 No modifican datos reales, secuencias ni esquema permanente.
 
-`/gestion/tests/interfaz.html` comprueba en navegador la apertura y cierre de las
+`/test/gestion/interfaz.html` comprueba en navegador la apertura y cierre de las
 ventanas, los formularios, los paneles de planificación y los botones de
 exportación. Solo realiza consultas: no envía formularios ni crea registros.

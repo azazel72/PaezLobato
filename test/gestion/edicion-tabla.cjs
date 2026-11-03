@@ -21,9 +21,9 @@ const context = vm.createContext({
     document: { createElement: tag => new Element(tag), createTextNode: text => ({ textContent: text }) },
     notify: message => notices.push(message), loadOverview() {}, windows: new Map(),
 });
-vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/ui-datos.js'), 'utf8') + '\nglobalThis.ui = GestionUI;', context);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../gestion/js/ui-datos.js'), 'utf8') + '\nglobalThis.ui = GestionUI;', context);
 const ui = context.ui;
-vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/maestros.js'), 'utf8') + '\nglobalThis.master = gestionMaestros;', context);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../gestion/js/maestros.js'), 'utf8') + '\nglobalThis.master = gestionMaestros;', context);
 let pencilClicks = 0, deleteClicks = 0;
 const legacyColumns = context.master.columns({ editing: false, pending: 0, loading: false }, [], () => deleteClicks++, () => pencilClicks++);
 const actions = legacyColumns.at(-1).formatter({ getRow: () => ({ getData: () => ({ id: 1 }) }) });

@@ -29,7 +29,7 @@ function entorno({ fallarImpresion = false, respuestaPhp = null } = {}) {
         },
     };
     vm.createContext(contexto);
-    vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/terminal-fabricacion-impresion.js'), 'utf8'), contexto);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../terminal/js/terminal-fabricacion-impresion.js'), 'utf8'), contexto);
     contexto.refrescarFabricacionTrasCrearBotas = async () => { llamadas.orden.push('refresco'); };
     return { contexto, llamadas, elementos, almacen };
 }

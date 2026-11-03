@@ -24,7 +24,7 @@ class Element {
     }
 }
 const context = vm.createContext({ document: { createElement: () => new Element() } });
-vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/cuadrante-anchuras.js'), 'utf8') + '\nglobalThis.resize = GestionCuadranteAnchuras;', context);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../gestion/js/cuadrante-anchuras.js'), 'utf8') + '\nglobalThis.resize = GestionCuadranteAnchuras;', context);
 const resize = context.resize;
 const root = new Element(), pool = new Element(220), separator = new Element(), layout = new Element(); layout.clientWidth = 900;
 const table = new Element();
