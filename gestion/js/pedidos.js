@@ -5,14 +5,11 @@ const GestionPedidos = {
         return GestionUI.open('pedidos', 'Pedidos', {
             icon: 'clipboard-check',
             setup(entry) {
-                const options = entry.content.querySelector('.data-options');
-                const label = document.createElement('label'); label.textContent = 'Destino';
-                const select = document.createElement('select');
-                select.innerHTML = '<option value="">Todos</option><option value="C">Cliente</option><option value="E">Envinado</option>';
-                label.append(select); options.append(label);
-                entry.extraFilter = row => !select.value || ({ CLIENTE: 'C', ENVINADO: 'E' }[row.destino] ?? row.destino) === select.value;
-                select.addEventListener('change', entry.applyFilters);
+                GestionOperaciones.filters(entry, { refs: ['cliente_id', 'estado', 'destino'], date: 'fecha' });
+                const filter = entry.extraFilter;
+                entry.extraFilter = row => filter({ ...row, destino: ({ CLIENTE: 'C', ENVINADO: 'E' }[row.destino] ?? row.destino) });
             },
+            loaded(entry) { GestionOperaciones.refreshFilters(entry); },
         });
     },
 };

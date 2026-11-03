@@ -1,5 +1,25 @@
 # Nueva gestión
 
+## Visibilidad por perfil
+
+`js/perfiles.js` centraliza la visibilidad del menú y la apertura de vistas.
+En Fabricación, «Maestros de fabricación» agrupa Tipos de producto y Tostados.
+Con un perfil establecido, estos maestros requieren `administrador`.
+Se conserva también el requisito `planificacion` de Planificación de entradas,
+procedente de la gestión anterior; los demás accesos siguen abiertos.
+Las banderas admiten `true`, `1` o `'1'`; `'0'` no concede permisos.
+
+La nueva gestión todavía no tiene una sesión de usuario autenticada. Hasta
+integrarla, el perfil es `null` y todos ven todo. La futura autenticación deberá
+pasar el registro del rol a `GestionPerfiles.establecerPerfil(rol)` y usar
+`establecerPerfil(null)` al retirar ese contexto. No se deduce un administrador
+ni se reutiliza el token de Python, cuya sesión reside en aquel servidor.
+Esta capa controla la interfaz; la autorización de datos en PHP deberá conectarse
+a la futura sesión autenticada antes de usarla como control de acceso efectivo.
+No se modifican roles ni privilegios almacenados en la BBDD.
+
+Comprobación: `node gestion/tests/perfiles.cjs`.
+
 Abrir `/paezlobato_nuevo/gestion/` cuando el proyecto esté dentro de esa carpeta,
 o `/gestion/` si la raíz del sitio es el repositorio. Apache sirve `index.html`.
 

@@ -12,24 +12,26 @@
   <link rel="stylesheet" href="css/modulos.css?v=20261018c">
   <link rel="stylesheet" href="css/cuadrante-completo.css?v=20261019f">
   <link rel="stylesheet" href="css/listados.css?v=20261019a">
-  <link rel="stylesheet" href="css/navegacion.css?v=20261019a">
+  <link rel="stylesheet" href="css/navegacion.css?v=20261102a">
   <script defer src="../static/js/tabulator.min.js"></script>
   <script defer src="../static/js/xlsx.full.min.js"></script>
   <script defer src="../static/js/jspdf.umd.min.js"></script>
   <script defer src="../static/js/jspdf.plugin.autotable.min.js"></script>
   <script defer src="vendor/jspanel.js"></script>
   <script defer src="js/maestros.js?v=20261018d"></script>
-  <script defer src="js/gestion.js?v=20261019c"></script>
+  <script defer src="js/perfiles.js?v=20261102a"></script>
+  <script defer src="js/gestion.js?v=20261102a"></script>
+  <script defer src="js/pantalla-completa.js?v=20261102a"></script>
   <script defer src="js/ui-datos.js?v=20261019e"></script>
   <script defer src="js/maestros-catalogo.js?v=20261018a"></script>
-  <script defer src="js/pedidos.js?v=20261018a"></script>
+  <script defer src="js/pedidos.js?v=20261102a"></script>
   <script defer src="js/fabricacion-semanal.js?v=20261018a"></script>
   <script defer src="js/cuadrante-completo-modelo.js?v=20261018a"></script>
   <script defer src="js/cuadrante-anchuras.js?v=20261019d"></script>
   <script defer src="js/cuadrante-completo.js?v=20261019d"></script>
   <script defer src="js/listados-exportar.js?v=20261019c"></script>
   <script defer src="js/listados.js?v=20261019b"></script>
-  <link rel="stylesheet" href="css/operaciones.css?v=20261019e">
+  <link rel="stylesheet" href="css/operaciones.css?v=20261102a">
   <script defer src="js/operaciones.js?v=20261019e"></script>
   <script defer src="js/paneles.js?v=20261019e"></script>
   <script defer src="js/archivos-entidad.js?v=20261019e"></script>
@@ -48,9 +50,8 @@
   <script defer src="js/cubicaje.js?v=20261019e"></script>
   <script defer src="js/planificacion-entradas.js?v=20261019e"></script>
   <script defer src="js/entradas-planificadas.js?v=20261019e"></script>
-  <script defer src="js/planificacion-pedidos.js?v=20261019e"></script>
   <script defer src="js/documentos-envinados.js?v=20261019e"></script>
-  <script defer src="js/navegacion.js?v=20261019g"></script>
+  <script defer src="js/navegacion.js?v=20261102a"></script>
 </head>
 <body>
   <aside class="sidebar" aria-label="Menú de gestión">
@@ -70,7 +71,6 @@
         <button class="nav-item" data-view="puestos_trabajo"><i class="bi bi-person-workspace"></i> Puestos de trabajo</button>
         <hr class="nav-divider">
         <button class="nav-item" data-table="materiales"><i class="bi bi-layers"></i> Materiales</button>
-        <button class="nav-item" data-view="tostados"><i class="bi bi-fire"></i> Tostados</button>
         <button class="nav-item" data-view="dias_festivos"><i class="bi bi-calendar-event"></i> Días festivos</button>
         <hr class="nav-divider">
         <button class="nav-item" data-view="archivos_subidos"><i class="bi bi-paperclip"></i> Archivos subidos</button>
@@ -91,11 +91,8 @@
       </details>
       <details>
         <summary class="nav-category" title="Fabricación"><i class="bi bi-tools" aria-hidden="true"></i><span>Fabricación</span></summary>
-        <button class="nav-item" data-view="planificacion_pedidos"><i class="bi bi-diagram-3"></i> Planificación de pedidos</button>
-        <hr class="nav-divider">
         <button class="nav-item" data-view="pedidos"><i class="bi bi-clipboard-check"></i> Pedidos</button>
         <button class="nav-item" data-view="analiticas"><i class="bi bi-clipboard2-pulse"></i> Analíticas de vino</button>
-        <button class="nav-item" data-view="tipos_producto"><i class="bi bi-tags"></i> Tipos de producto</button>
         <button class="nav-item" data-view="fabricacion_semanal"><i class="bi bi-calendar-week"></i> Fabricación semanal</button>
         <hr class="nav-divider">
         <button class="nav-item" data-view="trazabilidad_procesado"><i class="bi bi-arrow-left-right"></i> Trazabilidad de procesado</button>
@@ -108,6 +105,11 @@
         <button class="nav-item" data-view="palets"><i class="bi bi-boxes"></i> Palets</button>
         <button class="nav-item" data-view="productos"><i class="bi bi-tags"></i> Productos</button>
         <button class="nav-item" data-view="cubicaje"><i class="bi bi-rulers"></i> Cubicaje estándar</button>
+        <details data-permiso="administrador">
+          <summary class="nav-category nav-subcategory" title="Maestros de fabricación"><i class="bi bi-sliders" aria-hidden="true"></i><span>Maestros de fabricación</span></summary>
+          <button class="nav-item" data-view="tipos_producto"><i class="bi bi-tags"></i> Tipos de producto</button>
+          <button class="nav-item" data-view="tostados"><i class="bi bi-fire"></i> Tostados</button>
+        </details>
       </details>
       <details>
         <summary class="nav-category" title="Listados"><i class="bi bi-bar-chart" aria-hidden="true"></i><span>Listados</span></summary>
@@ -133,7 +135,7 @@
   <div class="app-shell">
     <header class="topbar">
       <div class="breadcrumb">Tonelería <span>/</span> <strong id="current-title">Vista general</strong></div>
-      <div class="top-actions"><span id="today"></span><button id="refresh-home" class="icon-button" title="Actualizar resumen" aria-label="Actualizar resumen"><i class="bi bi-arrow-clockwise"></i></button><span class="avatar">PL</span></div>
+      <div class="top-actions"><span id="today"></span><button id="refresh-home" class="icon-button" title="Actualizar resumen" aria-label="Actualizar resumen"><i class="bi bi-arrow-clockwise"></i></button><button id="toggle-fullscreen" type="button" class="icon-button" title="Maximizar vista" aria-label="Maximizar vista" aria-pressed="false"><i class="bi bi-fullscreen" aria-hidden="true"></i></button><span class="avatar">PL</span></div>
     </header>
     <main id="desktop" aria-label="Escritorio de gestión">
       <div class="overview">

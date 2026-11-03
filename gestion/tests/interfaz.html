@@ -35,10 +35,10 @@ frame.addEventListener('load', async () => {
             if (resource === 'ambientes') check(form.panel.content.querySelector('[name="temperatura_1"]').step === '0.01', 'No admite decimales');
             closeAll(); log.push(`OK ${resource}: consulta, formulario, XLS y PDF`);
         }
-        for (const key of ['planificacion_entradas', 'planificacion_pedidos']) {
+        for (const key of ['planificacion_entradas']) {
             await run(`GestionVistasOperaciones['${key}'].open()`);
             const entry = run('windows').get(key);
-            check(entry?.parts.length === (key === 'planificacion_entradas' ? 3 : 2), `${key}: paneles incompletos`);
+            check(entry?.parts.length === 3, `${key}: paneles incompletos`);
             check(entry.parts.every(part => part.table && !part.content.querySelector('.save-state').textContent.includes('Error')), `${key}: error de consulta`);
             if (key === 'planificacion_entradas') check(run('GestionListadosExportar').tableSnapshot(entry.parts[0]).columns.some(column => column.field === 'dic_confirmado' && column.title.includes('Diciembre')), 'Faltan meses en la exportación');
             entry.parts[0].actions.querySelector('[title="Crear registro"]').click();

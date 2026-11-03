@@ -93,6 +93,7 @@ function focusWindow(key) {
 }
 
 function createWindow(key, title, icon, content, narrow = false) {
+    if (!GestionPerfiles.puedeAbrir(key.split('-')[0])) { notify('Tu perfil no permite abrir esta vista.', true); return null; }
     if (windows.has(key)) { focusWindow(key); return null; }
     const area = desktop.getBoundingClientRect();
     const offset = windows.size % 4 * 22;
