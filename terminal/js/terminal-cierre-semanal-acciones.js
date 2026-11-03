@@ -87,7 +87,8 @@ function aplicarSalidaLoteCierrePhp(tipo, id, valor, codigo = "", ubicacionId = 
     const ubicacion = Number(ubicacionId || 0);
     if (tipo === "procesado" && (!Number.isInteger(ubicacion) || ubicacion < 1)) throw new Error("Selecciona una ubicación.");
     if (tipo === "procesado" && (!codigo || codigo.length > 60)) throw new Error("Indica el nombre del lote de destino (máximo 60 caracteres).");
-    lote.consumido = decimalLoteCierre(consumido + cantidad);
+    if (tipo === 'procesado') lote.cubicaje = decimalLoteCierre(cubicaje - cantidad);
+    else lote.consumido = decimalLoteCierre(consumido + cantidad);
     borradorLotesCierrePhp.operaciones.push({ tipo, origen_id: Number(lote.id), cantidad: decimalLoteCierre(cantidad), ...(tipo === "procesado" ? { codigo_destino: codigo, ubicacion_id: ubicacion } : {}) });
 }
 

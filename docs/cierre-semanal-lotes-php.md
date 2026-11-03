@@ -1,7 +1,7 @@
 # Acciones de lotes en Cierre semanal
 
 El cierre procedente de Fabricación carga todas las fabricaciones activas y todos
-los lotes de `a_lotes_botas` desde PHP. Los dos selectores de cada tarjeta se
+los lotes de `a_lotes` con objetivo BOTAS desde PHP. Los selectores de cada tarjeta se
 construyen con esa misma lista en memoria, excluyendo el ID de la propia tarjeta.
 
 - **Reasignar consumo a otro lote:** resta consumo al lote de la tarjeta y lo suma
@@ -13,14 +13,17 @@ Ambas acciones conservan cubicajes y contadores de botas. La cantidad debe ser
 positiva, no superar el consumo del origen y no dejar negativo el restante del
 receptor. Los cálculos se hacen en unidades enteras de 0.0001.
 
-También se mantienen **Enviar a procesado** y **Enviar a desperdicio**. Ambas
-incrementan el consumido del lote de botas, sin superar su restante ni cambiar
-su cubicaje o contador. Procesado pide un código de lote destino: PHP crea el
-lote en `a_lotes_procesados` o aumenta el cubicaje del existente si su material
-y tipo coinciden. Desperdicio registra destino 0 y situación `desperdicio`;
-procesado registra el ID destino con situación `procesado`. El origen siempre
-es el lote de botas y la cantidad es positiva. Se guardan al confirmar, en la
-misma transacción, y Restablecer también deshace estas salidas pendientes.
+La sección unificada **Enviar restante** permite otro lote, almacenado o
+desperdicio. **Almacenado** (tipo interno `procesado`) resta cubicaje original del
+origen, mantiene su consumido y suma cubicaje al destino de objetivo ALMACENADO,
+buscado por código y ubicación. El movimiento sigue siendo `botas → almacenado`
+en `a_movimientos`. No genera ajuste de consumo.
+
+**Desperdicio** conserva el cubicaje y cambia el consumido para dejar el restante
+a cero. La cantidad coincide con todo el restante, positivo o negativo. Se registra
+en `a_ajustes_consumo` con tipo `desperdicio`, lote afectado en `origen_id`, destino
+NULL y cantidad con signo. Nunca genera un movimiento de material. Se conserva el
+consumo antes/después, fecha, motivo y usuario cuando se pueda identificar.
 
 El botón **Actualizar cambios** envía todo el borrador en una sola petición a
 `api/cierre_semanal_lotes.php`; esta vista no utiliza Python ni las acciones
@@ -80,3 +83,9 @@ instalado con `SQL/actualizaciones/20261103_pa_registrar_ajuste_consumo.sql`.
 El PA valida cantidad, balances, IDs y motivo, e inserta la auditoría. No modifica
 lotes ni ejecuta COMMIT: participa en la transacción que coordina PHP para que el
 registro y el cambio de consumidos se confirmen o reviertan conjuntamente.
+
+El desperdicio usa `pa_registrar_desperdicio_consumo` (sin COMMIT), instalado con
+`SQL/actualizaciones/20261103_pa_registrar_desperdicio_consumo.sql`. La ampliación
+de la tabla existente está en `20261103_ajustes_desperdicio.sql`; conserva los
+registros históricos y no cambia la versión de la BBDD. Pruebas:
+`php test/test_almacenado_cierre.php` y `php test/test_desperdicio_signos.php`.

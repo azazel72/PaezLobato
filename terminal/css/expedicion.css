@@ -102,6 +102,17 @@
     background: linear-gradient(180deg, #fcf8ff 0%, #f2ebfa 100%);
 }
 
+.destino-pedido-card-anonimo {
+    border-color: #8cb9de;
+    background: linear-gradient(180deg, #f4faff 0%, #e4f0fc 100%);
+}
+
+.destino-pedido-cifras {
+    font-size: 0.78rem;
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
+}
+
 .destino-pedido-resumen {
     list-style: none;
     cursor: pointer;

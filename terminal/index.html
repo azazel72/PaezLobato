@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="./css/paneles-fijos.css?v=20260828a" />
     <link rel="stylesheet" href="./css/ubicacion.css?v=20260828a" />
     <link rel="stylesheet" href="./css/fabricacion.css?v=20261001i" />
-    <link rel="stylesheet" href="./css/expedicion.css?v=20260828a" />
+    <link rel="stylesheet" href="./css/expedicion.css?v=20261103a" />
     <link rel="stylesheet" href="./css/analiticas-envinado.css?v=20260828a" />
     <link rel="stylesheet" href="./css/tema-index-alternativo.css?v=20261009a" />
     <link rel="icon" type="image/png" href="../imagenes/iconos/tonel.png">
@@ -1119,7 +1119,13 @@
         <section id="vista_destino" class="flex-fill vista-panel-fija">
             <div class="contenedor-panel-fijo panel-fijo">
                 <div class="panel-fijo-header">
-                    <h5 class="mb-0">Destino</h5>
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <h5 class="mb-0">Destino</h5>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" role="switch" id="destino-ocultar-sin-pendientes" checked>
+                            <label class="form-check-label small" for="destino-ocultar-sin-pendientes">Ocultar sin botas pendientes</label>
+                        </div>
+                    </div>
                     <div id="destino-resumen" class="small text-muted"></div>
                 </div>
                 <div class="panel-fijo-body">
@@ -1452,10 +1458,11 @@
     <script src="./js/terminal-fondos.js?v=20261001a"></script>
     <script src="./js/terminal-cierre-semanal.js?v=20261001d"></script>
     <script src="./js/terminal-cierre-semanal-php.js?v=20261103c"></script>
-    <script src="./js/terminal-cierre-enviar-restante.js?v=20261103c"></script>
-    <script src="./js/terminal-cierre-semanal-acciones.js?v=20261103h"></script>
+    <script src="./js/terminal-cierre-enviar-restante.js?v=20261103d"></script>
+    <script src="./js/terminal-cierre-semanal-acciones.js?v=20261103i"></script>
     <script src="./js/terminal-productos-destino.js?v=20260828a"></script>
-    <script src="./js/terminal-destino.js?v=20260828a"></script>
+    <script src="./js/terminal-destino-resumen.js?v=20261103d"></script>
+    <script src="./js/terminal-destino.js?v=20261103a"></script>
     <script src="./js/terminal-almacen.js?v=20260828a"></script>
     <script src="./js/terminal-analiticas.js?v=20260828a"></script>
     <script src="./js/terminal-envinado.js?v=20260828a"></script>
@@ -1465,7 +1472,7 @@
     <script src="./js/terminal-ambientes.js?v=20260828a"></script>
     <script src="./js/terminal-botas-diarias.js?v=20260828a"></script>
     <script src="./js/terminal-buscar-botas.js?v=20260828a"></script>
-    <script src="./js/terminal.js?v=20261103b"></script>
+    <script src="./js/terminal.js?v=20261103c"></script>
 
 </body>
 

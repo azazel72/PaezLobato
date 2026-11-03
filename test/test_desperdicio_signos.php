@@ -24,8 +24,22 @@ catch (Throwable $e) {
     throw $e;
 }
 foreach ($resultado['lotes'] as $lote) comprobarDesperdicio($lote['cubicaje'] === $lote['consumido'], 'Restante a cero');
-$mov = $pdo->query('SELECT origen_id,destino_id,situacion_origen,situacion_destino,cantidad FROM a_movimientos ORDER BY id')->fetchAll();
-comprobarDesperdicio(count($mov) === 2, 'Dos movimientos');
-comprobarDesperdicio((int)$mov[0]['origen_id'] === 172 && (int)$mov[0]['destino_id'] === 0 && $mov[0]['situacion_origen'] === 'botas' && $mov[0]['situacion_destino'] === 'desperdicio' && $mov[0]['cantidad'] === '14.0570', 'Salida positiva a desperdicio');
-comprobarDesperdicio((int)$mov[1]['origen_id'] === 0 && (int)$mov[1]['destino_id'] === 163 && $mov[1]['situacion_origen'] === 'desperdicio' && $mov[1]['situacion_destino'] === 'botas' && $mov[1]['cantidad'] === '5.7300', 'Corrección negativa con sentido inverso e importe positivo');
-echo "OK: ambos desperdicios notificados, restantes a cero y movimientos con sentido correcto; solo tablas temporales.\n";
+comprobarDesperdicio((int)$pdo->query('SELECT COUNT(*) FROM a_movimientos')->fetchColumn() === 0, 'El desperdicio no genera movimientos materiales');
+$ajustes = $pdo->query('SELECT * FROM a_ajustes_consumo ORDER BY orden')->fetchAll();
+comprobarDesperdicio(count($ajustes) === 2 && array_column($ajustes,'tipo') === ['desperdicio','desperdicio'], 'Dos ajustes de desperdicio');
+comprobarDesperdicio(array_column($ajustes,'cantidad') === ['14.0570','-5.7300'], 'Se conserva el signo del consumo');
+comprobarDesperdicio(array_map('intval',array_column($ajustes,'origen_id')) === [172,163], 'Se conserva el lote afectado');
+comprobarDesperdicio($ajustes[0]['destino_id'] === null && $ajustes[1]['destino_id'] === null, 'Sin lote destino ficticio');
+comprobarDesperdicio(array_column($resultado['lotes'],'cubicaje') === ['15.0180','16.0510'], 'Cubicajes intactos');
+// Si falla el registro de desperdicio, tampoco se confirma el consumido.
+$pdo->exec('DELETE FROM a_ajustes_consumo');
+$pdo->exec('UPDATE a_lotes SET consumido=20.7480 WHERE id=163');
+$pdo->exec("ALTER TABLE a_ajustes_consumo ADD CONSTRAINT bloquear_desperdicio CHECK (tipo<>'desperdicio')");
+$antes=$pdo->query('SELECT * FROM a_lotes ORDER BY id')->fetchAll();
+try {
+    confirmarCambiosLotesCierre($pdo,['lotes_originales'=>$antes,'operaciones'=>[['tipo'=>'desperdicio','origen_id'=>163,'cantidad'=>'-5.7300']]]);
+    throw new RuntimeException('Se esperaba fallo del registro');
+} catch (PDOException $e) {}
+comprobarDesperdicio($pdo->query('SELECT * FROM a_lotes ORDER BY id')->fetchAll()===$antes,'Rollback del consumo si falla la auditoría');
+comprobarDesperdicio((int)$pdo->query('SELECT COUNT(*) FROM a_ajustes_consumo')->fetchColumn()===0,'Sin auditoría parcial');
+echo "OK: desperdicios de ambos signos auditados, sin movimientos y con restantes a cero; solo tablas temporales.\n";

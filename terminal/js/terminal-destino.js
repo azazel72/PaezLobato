@@ -104,24 +104,7 @@ function prepararEventosDestino() {
 }
 
 async function cargarVistaDestino() {
-    await cargarVistaProductosPorFiltros({
-        listaId: "destino-lista",
-        resumenId: "destino-resumen",
-        tipos: ["BOTA"],
-        pedidoEstado: 2,
-        estadosProducto: [1, 2],
-        etiquetaResumen: "botas",
-        textoVacio: "No hay botas para destino.",
-        renderizador: renderizarVistaProductosPorPedido,
-        mostrarDestinoPedido: true,
-        resolverClasePedido: (destino) => {
-            const valor = String(destino || "").trim().toUpperCase();
-            if (valor === "CLIENTE" || valor === "C") return "destino-pedido-card destino-pedido-card-cliente";
-            if (valor === "ENVINADO" || valor === "E") return "destino-pedido-card destino-pedido-card-envinado";
-            return "destino-pedido-card";
-        },
-        renderAccionPedido: (grupo) => renderizarAccionPedidoDestino(grupo),
-    });
+    await cargarResumenPedidosDestino();
 }
 
 const estadoDestino = {

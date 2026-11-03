@@ -26,7 +26,7 @@ function crearAccionEnviarRestanteCierrePhp(lote) {
     const tipo = elementoCierrePhp('select', 'form-select form-select-sm');
     tipo.dataset.cierreEnvioTipo = '1';
     tipo.setAttribute('aria-label', 'Destino del restante');
-    for (const [value, label] of [['restante', 'A otro lote'], ['procesado', 'A procesado'], ['desperdicio', 'A desperdicio']]) {
+    for (const [value, label] of [['restante', 'A otro lote'], ['procesado', 'A almacenado'], ['desperdicio', 'A desperdicio']]) {
         const option = elementoCierrePhp('option', '', label); option.value = value;
         option.disabled = restante < 0 && value !== 'desperdicio'; tipo.appendChild(option);
     }
@@ -56,7 +56,7 @@ function crearAccionEnviarRestanteCierrePhp(lote) {
     const procesado = elementoCierrePhp('div', 'cierre-semanal-operacion-cuerpo mt-0');
     const ubicacion = elementoCierrePhp('select', 'form-select form-select-sm');
     ubicacion.dataset.cierreProcesadoUbicacion = lote.id;
-    ubicacion.setAttribute('aria-label', 'Ubicación del lote de procesado');
+    ubicacion.setAttribute('aria-label', 'Ubicación del lote almacenado');
     const sinUbicacion = elementoCierrePhp('option', '', 'Seleccione ubicación...'); sinUbicacion.value = ''; ubicacion.appendChild(sinUbicacion);
     for (const item of cierreSemanalPhp.opcionesProcesado.ubicaciones) {
         const option = elementoCierrePhp('option', '', item.descripcion); option.value = String(item.id); ubicacion.appendChild(option);
@@ -77,7 +77,7 @@ function crearAccionEnviarRestanteCierrePhp(lote) {
         input.readOnly = desperdicio;
         input.min = desperdicio ? decimalLoteCierreConSigno(restante) : '0.0001';
         input.max = input.value = decimalLoteCierreConSigno(restante);
-        button.textContent = { restante: 'Enviar a otro lote', procesado: 'Enviar a procesar', desperdicio: 'Enviar a desperdicio' }[tipo.value];
+        button.textContent = { restante: 'Enviar a otro lote', procesado: 'Enviar a almacenado', desperdicio: 'Enviar a desperdicio' }[tipo.value];
         button.disabled = borradorLotesCierrePhp.guardando || (tipo.value === 'restante' && !select.value);
     };
     tipo.addEventListener('change', actualizar);

@@ -29,7 +29,7 @@ lot.value = '2'; lot.events.change(); assert.equal(button.disabled, false);
 assert.equal(amount.max, '1.5000'); assert.equal(amount.readOnly, false);
 mode.value = 'procesado'; mode.events.change();
 assert.equal(lot.hidden, true); assert.equal(amount.min, '0.0001');
-assert.equal(button.textContent, 'Enviar a procesar'); assert(processing);
+assert.equal(button.textContent, 'Enviar a almacenado'); assert(processing);
 mode.value = 'desperdicio'; mode.events.change();
 assert.equal(amount.readOnly, true); assert.equal(amount.value, '1.5000');
 assert.equal(button.textContent, 'Enviar a desperdicio');

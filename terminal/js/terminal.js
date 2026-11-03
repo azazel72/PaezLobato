@@ -53,6 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
     prepararEventosEnviarRestanteCierrePhp();
     prepararFiltroConsumoCierrePhp();
     prepararEventosDestino();
+    prepararFiltroPedidosDestino();
     prepararEventosAlmacen();
     prepararEventosAnaliticas?.();
     prepararEventosEnvinado?.();
