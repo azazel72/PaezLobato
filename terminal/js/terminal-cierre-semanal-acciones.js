@@ -55,8 +55,12 @@ function aplicarReasignacionLoteCierrePhp(tipo, origenId, destinoId, valor) {
     const origen = tipo === "consumo" ? actual : otro;
     const destino = tipo === "consumo" ? otro : actual;
     if (!origen || !destino || origen === destino) throw new Error("Selecciona otro lote de destino.");
+    if (actual.finalizarPendiente || otro.finalizarPendiente) throw new Error("No se puede reasignar consumo de un lote pendiente de finalizar.");
     const cantidad = unidadesLoteCierre(valor);
     if (cantidad <= 0) throw new Error("La cantidad debe ser mayor que cero.");
+    const restanteActual = unidadesLoteCierre(actual.cubicaje) - unidadesLoteCierre(actual.consumido);
+    if (restanteActual === 0 || (tipo === 'recibir_consumo') !== (restanteActual > 0)) throw new Error("La dirección de la reasignación no corresponde al restante del lote.");
+    if (cantidad > Math.abs(restanteActual)) throw new Error("La cantidad supera el ajuste necesario para dejar el restante a cero.");
     const desde = unidadesLoteCierre(origen.consumido);
     const hasta = unidadesLoteCierre(destino.consumido);
     if (cantidad > desde) throw new Error("No puedes reasignar más consumo del registrado en el lote de origen.");
@@ -124,11 +128,13 @@ function rellenarLotesProcesadoPorUbicacion(select, input) {
 
 function crearAccionesLoteCierrePhp(lote) {
     const acciones = elementoCierrePhp("div", "cierre-semanal-lote-acciones mt-3");
-    for (const tipo of ["consumo", "recibir_consumo"]) {
+    const restanteReasignacion = unidadesLoteCierre(lote.cubicaje) - unidadesLoteCierre(lote.consumido);
+    if (restanteReasignacion !== 0 && !lote.finalizarPendiente) {
+        const tipo = restanteReasignacion > 0 ? 'recibir_consumo' : 'consumo';
         const entrada = tipo === "recibir_consumo";
         const formulario = elementoCierrePhp("details", "cierre-semanal-lote-form cierre-semanal-lote-form-full");
         formulario.dataset.cierrePhpTipo = tipo;
-        formulario.appendChild(elementoCierrePhp("summary", "cierre-semanal-operacion-titulo", entrada ? "Reasignar consumo desde otro lote" : "Reasignar consumo a otro lote"));
+        formulario.appendChild(elementoCierrePhp("summary", "cierre-semanal-operacion-titulo", "Reasignar consumo"));
         const cuerpo = elementoCierrePhp("div", "cierre-semanal-operacion-cuerpo");
         const selector = elementoCierrePhp("select", "form-select form-select-sm");
         selector.setAttribute("aria-label", `Lote ${entrada ? "origen" : "destino"} para reasignar consumo ${entrada ? "a" : "de"} ${lote.codigo}`);
@@ -140,10 +146,11 @@ function crearAccionesLoteCierrePhp(lote) {
             if (Number(destino.id) === Number(lote.id)) continue;
             const opcion = elementoCierrePhp("option", "", etiquetaLoteComboCierrePhp(destino));
             opcion.value = String(destino.id);
+            const disponible = entrada ? unidadesLoteCierre(destino.consumido) : unidadesLoteCierre(destino.cubicaje) - unidadesLoteCierre(destino.consumido);
+            opcion.disabled = !!destino.finalizarPendiente || (!entrada && disponible <= 0);
             selector.appendChild(opcion);
         }
         selector.disabled = borradorLotesCierrePhp.guardando;
-        cuerpo.appendChild(selector);
         const linea = elementoCierrePhp("div", "cierre-semanal-lote-inline");
         const input = elementoCierrePhp("input", "form-control form-control-sm");
         input.type = "number";
@@ -152,66 +159,32 @@ function crearAccionesLoteCierrePhp(lote) {
         input.setAttribute("aria-label", `M3 de consumo ${entrada ? "a recibir en" : "a ceder desde"} ${lote.codigo}`);
         const consumido = unidadesLoteCierre(lote.consumido);
         const cubicaje = unidadesLoteCierre(lote.cubicaje);
-        const maximo = entrada ? Math.max(0, cubicaje - consumido) : consumido;
+        const maximo = Math.abs(cubicaje - consumido);
         input.max = decimalLoteCierre(maximo);
-        input.value = decimalLoteCierre(entrada ? maximo : Math.max(0, consumido - cubicaje));
+        input.value = decimalLoteCierre(maximo);
         input.disabled = borradorLotesCierrePhp.guardando;
         linea.appendChild(input);
-        const boton = elementoCierrePhp("button", "btn btn-sm btn-outline-primary", entrada ? "Recibir consumo" : "Reasignar consumo");
+        const boton = elementoCierrePhp("button", "btn btn-sm btn-outline-primary", entrada ? "Recibir consumo de…" : "Trasladar consumo a…");
         boton.type = "button";
         boton.dataset.cierrePhpReasignar = tipo;
-        boton.disabled = borradorLotesCierrePhp.guardando || maximo <= 0 || cierreSemanalPhp.lotes.length < 2;
+        boton.disabled = true;
+        selector.addEventListener('change', () => {
+            const otro = cierreSemanalPhp.lotes.find(item => String(item.id) === selector.value);
+            const disponible = otro ? (entrada ? unidadesLoteCierre(otro.consumido) : unidadesLoteCierre(otro.cubicaje) - unidadesLoteCierre(otro.consumido)) : 0;
+            const limite = Math.max(0, Math.min(maximo, disponible));
+            input.max = decimalLoteCierre(limite);
+            input.min = '0.0001';
+            input.value = decimalLoteCierre(entrada ? maximo : limite);
+            boton.disabled = borradorLotesCierrePhp.guardando || !otro || limite <= 0;
+        });
         linea.appendChild(boton);
         cuerpo.appendChild(linea);
+        cuerpo.appendChild(selector);
         formulario.appendChild(cuerpo);
         acciones.appendChild(formulario);
     }
-    for (const tipo of ["procesado", "desperdicio"]) {
-        const titulo = tipo === "procesado" ? "Enviar a procesar" : "Enviar a desperdicio";
-        const formulario = elementoCierrePhp("details", "cierre-semanal-lote-form cierre-semanal-lote-form-full");
-        formulario.appendChild(elementoCierrePhp("summary", "cierre-semanal-operacion-titulo", titulo));
-        const cuerpo = elementoCierrePhp("div", "cierre-semanal-operacion-cuerpo");
-        if (tipo === "procesado") {
-            const ubicacion = elementoCierrePhp("select", "form-select form-select-sm");
-            ubicacion.dataset.cierreProcesadoUbicacion = lote.id;
-            ubicacion.appendChild(elementoCierrePhp("option", "", "Seleccione ubicación..."));
-            cierreSemanalPhp.opcionesProcesado.ubicaciones.forEach(item => {
-                const opcion = elementoCierrePhp("option", "", item.descripcion);
-                opcion.value = String(item.id);
-                ubicacion.appendChild(opcion);
-            });
-            cuerpo.appendChild(ubicacion);
-            const codigo = elementoCierrePhp("input", "form-control form-control-sm");
-            codigo.type = "text";
-            codigo.maxLength = 60;
-            codigo.placeholder = "Nombre del lote de destino";
-            codigo.setAttribute("list", `cierre-procesado-lotes-${lote.id}`);
-            codigo.dataset.cierreProcesadoCodigo = lote.id;
-            codigo.setAttribute("aria-label", codigo.placeholder);
-            codigo.disabled = borradorLotesCierrePhp.guardando;
-            cuerpo.appendChild(codigo);
-            const datalist = elementoCierrePhp("datalist", "");
-            datalist.id = `cierre-procesado-lotes-${lote.id}`;
-            cuerpo.appendChild(datalist);
-        }
-        const restante = unidadesLoteCierre(lote.cubicaje) - unidadesLoteCierre(lote.consumido);
-        const cantidad = elementoCierrePhp("input", "form-control form-control-sm");
-        cantidad.type = "number";
-        cantidad.step = "0.0001";
-        if (tipo !== "desperdicio") cantidad.min = "0.0001";
-        cantidad.value = decimalLoteCierreConSigno(restante);
-        if (tipo === "procesado" && restante > 0) cantidad.max = decimalLoteCierre(restante);
-        cantidad.setAttribute("aria-label", `M3 a ${tipo}`);
-        cantidad.disabled = borradorLotesCierrePhp.guardando;
-        cuerpo.appendChild(cantidad);
-        const boton = elementoCierrePhp("button", `btn btn-sm btn-outline-${tipo === "procesado" ? "success" : "danger"}`, titulo);
-        boton.type = "button";
-        boton.dataset.cierrePhpSalida = tipo;
-        boton.disabled = borradorLotesCierrePhp.guardando || restante === 0;
-        cuerpo.appendChild(boton);
-        formulario.appendChild(cuerpo);
-        acciones.appendChild(formulario);
-    }
+    const enviarRestante = crearAccionEnviarRestanteCierrePhp(lote);
+    if (enviarRestante) acciones.appendChild(enviarRestante);
     return acciones;
 }
 
@@ -226,7 +199,9 @@ function pintarCambiosLotesCierrePhp() {
             const codigo = id => cierreSemanalPhp.lotes.find(lote => Number(lote.id) === id)?.codigo || id;
             operaciones.forEach(op => lista.appendChild(elementoCierrePhp("li", "", op.tipo === "finalizar"
                 ? `Finalizar lote ${codigo(op.origen_id)}.`
-                : (op.tipo === "consumo"
+                : (op.tipo === "restante"
+                    ? `Enviar restante: ${formatearNumeroFabricacion(op.cantidad)} m³ de ${codigo(op.origen_id)} a ${codigo(op.destino_id)}.`
+                    : op.tipo === "consumo"
                     ? `Consumo: ${formatearNumeroFabricacion(op.cantidad)} m³ de ${codigo(op.origen_id)} a ${codigo(op.destino_id)}.`
                     : `Enviar ${formatearNumeroFabricacion(op.cantidad)} m³ de ${codigo(op.origen_id)} a ${op.tipo}${op.codigo_destino ? ` (${op.codigo_destino})` : ""}.`))));
             nota.appendChild(lista);

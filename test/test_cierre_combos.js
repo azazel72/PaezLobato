@@ -25,3 +25,29 @@ assert.match(context.etiquetaLoteComboCierrePhp(state.lotes[0]), /Restante: 1\.5
 vm.runInContext('borradorLotesCierrePhp.operaciones = [];', context);
 assert.equal(context.lotesProcesadoVirtualesCierrePhp().length, 1);
 console.log('OK: etiquetas de duela, restante virtual, operaciones acumuladas, nuevos destinos y restablecimiento.');
+
+function reset() {
+    context.iniciarBorradorLotesCierrePhp([
+        { id: 1, codigo: 'NEGATIVO', cubicaje: '1.0000', consumido: '1.2000' },
+        { id: 2, codigo: 'POSITIVO', cubicaje: '1.0000', consumido: '0.5000' },
+        { id: 3, codigo: 'SIN HUECO', cubicaje: '1.0000', consumido: '1.0000' },
+    ]);
+}
+reset();
+assert.throws(() => context.aplicarReasignacionLoteCierrePhp('consumo', 1, 2, '-0.1'));
+assert.throws(() => context.aplicarReasignacionLoteCierrePhp('consumo', 1, 2, '0'));
+assert.throws(() => context.aplicarReasignacionLoteCierrePhp('consumo', 1, 3, '0.1'), /negativo/);
+context.aplicarReasignacionLoteCierrePhp('recibir_consumo', 2, 1, '0.1');
+assert.equal(state.lotes[0].consumido, '1.1000', 'El origen puede conservar restante negativo');
+assert.equal(state.lotes[1].consumido, '0.6000');
+reset();
+assert.throws(() => context.aplicarReasignacionLoteCierrePhp('consumo', 1, 2, '0.3'), /supera/);
+context.aplicarReasignacionLoteCierrePhp('consumo', 1, 2, '0.2000');
+assert.equal(state.lotes[0].consumido, '1.0000');
+assert.equal(state.lotes[1].consumido, '0.7000');
+assert.throws(() => context.aplicarReasignacionLoteCierrePhp('consumo', 1, 2, '0.1'), /dirección/);
+reset();
+context.aplicarReasignacionLoteCierrePhp('recibir_consumo', 2, 1, '0.3000');
+assert.equal(state.lotes[0].consumido, '0.9000');
+assert.equal(state.lotes[1].consumido, '0.8000');
+console.log('OK: reasignación por signo y recepción parcial desde origen con restante negativo.');

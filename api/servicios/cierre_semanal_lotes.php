@@ -34,7 +34,7 @@ function idCierreLotes($valor): int
     return $id;
 }
 
-function confirmarCambiosLotesCierre(PDO $pdo, array $datos): array
+function confirmarCambiosLotesCierre(PDO $pdo, array $datos, ?int $usuarioId = null): array
 {
     $operaciones = $datos['operaciones'] ?? null;
     $originales = $datos['lotes_originales'] ?? null;
@@ -54,10 +54,14 @@ function confirmarCambiosLotesCierre(PDO $pdo, array $datos): array
     $normalizadas = [];
     $ids = [];
     foreach ($operaciones as $op) {
-        if (!is_array($op) || !in_array($op['tipo'] ?? '', ['consumo', 'procesado', 'desperdicio', 'finalizar'], true)) throw new InvalidArgumentException('Acción de lote no válida.');
+        if (!is_array($op) || !in_array($op['tipo'] ?? '', ['consumo', 'restante', 'procesado', 'desperdicio', 'finalizar'], true)) throw new InvalidArgumentException('Acción de lote no válida.');
         $tipo = $op['tipo'];
+        $motivo = $tipo === 'consumo' ? ($op['motivo'] ?? 'Reasignación de consumo en cierre semanal') : '';
+        if (!is_string($motivo) || ($tipo === 'consumo' && (trim($motivo) === '' || mb_strlen($motivo) > 255))) throw new InvalidArgumentException('Motivo del ajuste de consumo no válido.');
+        $motivo = trim($motivo);
         $origen = idCierreLotes($op['origen_id'] ?? null);
-        $destino = $tipo === 'consumo' ? idCierreLotes($op['destino_id'] ?? null) : 0;
+        $entreLotes = in_array($tipo, ['consumo', 'restante'], true);
+        $destino = $entreLotes ? idCierreLotes($op['destino_id'] ?? null) : 0;
         $cantidad = $tipo === 'finalizar'
             ? 0
             : (($tipo === 'desperdicio') ? unidadesCierreLotesConSigno($op['cantidad'] ?? null) : unidadesCierreLotes($op['cantidad'] ?? null));
@@ -73,10 +77,10 @@ function confirmarCambiosLotesCierre(PDO $pdo, array $datos): array
             if (!$validarUbicacion->fetchColumn()) throw new InvalidArgumentException('Selecciona una ubicación de una instalación de madera (M).');
         }
         if ($origen === $destino || ($tipo !== 'desperdicio' && $tipo !== 'finalizar' && $cantidad <= 0) || ($tipo === 'desperdicio' && $cantidad === 0)) throw new InvalidArgumentException('Selecciona una cantidad válida.');
-        if (!isset($bases[$origen]) || ($tipo === 'consumo' && !isset($bases[$destino]))) throw new InvalidArgumentException('Faltan los valores originales de los lotes.');
-        $normalizadas[] = compact('tipo', 'origen', 'destino', 'cantidad', 'codigo', 'ubicacionId');
+        if (!isset($bases[$origen]) || ($entreLotes && !isset($bases[$destino]))) throw new InvalidArgumentException('Faltan los valores originales de los lotes.');
+        $normalizadas[] = compact('tipo', 'origen', 'destino', 'cantidad', 'codigo', 'ubicacionId', 'motivo');
         $ids[$origen] = $origen;
-        if ($tipo === 'consumo') $ids[$destino] = $destino;
+        if ($entreLotes) $ids[$destino] = $destino;
     }
     sort($ids, SORT_NUMERIC);
     $pdo->beginTransaction();
@@ -95,7 +99,8 @@ function confirmarCambiosLotesCierre(PDO $pdo, array $datos): array
         if (count($lotes) !== count($ids)) throw new ConflictoLotesCierre('Alguno de los lotes ya no existe. Recarga la vista.');
 
         // Reproducir y validar todo el borrador antes de escribir.
-        foreach ($normalizadas as $op) {
+        $ajustes = [];
+        foreach ($normalizadas as $orden => $op) {
             $origen = $op['origen'];
             $destino = $op['destino'];
             $cantidad = $op['cantidad'];
@@ -103,6 +108,16 @@ function confirmarCambiosLotesCierre(PDO $pdo, array $datos): array
                 throw new InvalidArgumentException('No se puede modificar un lote que ya está finalizado.');
             }
             $consumoOrigen = unidadesCierreLotes($lotes[$origen]['consumido']);
+            if ($op['tipo'] === 'restante') {
+                if ((int) $lotes[$destino]['estado'] >= 2) throw new InvalidArgumentException('El lote de destino ya está finalizado.');
+                $cubicajeOrigen = unidadesCierreLotes($lotes[$origen]['cubicaje']);
+                $cubicajeDestino = unidadesCierreLotes($lotes[$destino]['cubicaje']);
+                if ($cantidad > $cubicajeOrigen - $consumoOrigen) throw new InvalidArgumentException('La cantidad supera el restante del lote de origen.');
+                if ($cubicajeDestino + $cantidad > 9999999999) throw new InvalidArgumentException('El lote de destino superaría el cubicaje permitido.');
+                $lotes[$origen]['cubicaje'] = decimalCierreLotes($cubicajeOrigen - $cantidad);
+                $lotes[$destino]['cubicaje'] = decimalCierreLotes($cubicajeDestino + $cantidad);
+                continue;
+            }
         if ($op['tipo'] === 'finalizar') {
             $consumoOrigen = unidadesCierreLotes($lotes[$origen]['consumido']);
             $cubicajeOrigen = unidadesCierreLotes($lotes[$origen]['cubicaje']);
@@ -128,11 +143,29 @@ function confirmarCambiosLotesCierre(PDO $pdo, array $datos): array
             }
             $lotes[$origen]['consumido'] = decimalCierreLotes($consumoOrigen - $cantidad);
             $lotes[$destino]['consumido'] = decimalCierreLotes($consumoDestino + $cantidad);
+            $ajustes[] = [
+                $orden + 1, $origen, $destino, $lotes[$origen]['codigo'], $lotes[$destino]['codigo'], decimalCierreLotes($cantidad),
+                decimalCierreLotes($consumoOrigen), $lotes[$origen]['consumido'],
+                decimalCierreLotes($consumoDestino), $lotes[$destino]['consumido'], $usuarioId, $op['motivo'],
+            ];
         }
-        $actualizar = $pdo->prepare("UPDATE a_lotes SET consumido = ?, estado = ? WHERE id = ? AND objetivo = 'BOTAS'");
-        foreach ($lotes as $id => $lote) $actualizar->execute([$lote['consumido'], (int) $lote['estado'], $id]);
-        $movimiento = $pdo->prepare("INSERT INTO a_movimientos (origen_id, situacion_origen, destino_id, situacion_destino, cantidad) VALUES (?, 'botas', ?, ?, ?)");
+        $actualizar = $pdo->prepare("UPDATE a_lotes SET cubicaje = ?, consumido = ?, estado = ? WHERE id = ? AND objetivo = 'BOTAS'");
+        foreach ($lotes as $id => $lote) $actualizar->execute([$lote['cubicaje'], $lote['consumido'], (int) $lote['estado'], $id]);
+        if ($ajustes) {
+            $grupo = bin2hex(random_bytes(16));
+            $guardarAjuste = $pdo->prepare('CALL pa_registrar_ajuste_consumo(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            foreach ($ajustes as $ajuste) {
+                $guardarAjuste->execute([$grupo, ...$ajuste]);
+                while ($guardarAjuste->nextRowset()) { }
+                $guardarAjuste->closeCursor();
+            }
+        }
+        $movimiento = $pdo->prepare('INSERT INTO a_movimientos (origen_id, situacion_origen, destino_id, situacion_destino, cantidad) VALUES (?, ?, ?, ?, ?)');
         foreach ($normalizadas as $op) {
+            if ($op['tipo'] === 'restante') {
+                $movimiento->execute([$op['origen'], 'botas', $op['destino'], 'botas', decimalCierreLotes($op['cantidad'])]);
+                continue;
+            }
             if ($op['tipo'] === 'finalizar') {
                 continue;
             }
@@ -155,20 +188,18 @@ function confirmarCambiosLotesCierre(PDO $pdo, array $datos): array
                     $destino = (int) $procesado['id'];
                     $pdo->prepare('UPDATE a_lotes SET cubicaje = ? WHERE id = ?')->execute([decimalCierreLotes($cubicaje), $destino]);
                 }
-                if ($op['tipo'] === 'desperdicio' && $op['cantidad'] < 0) {
-                    // Un desperdicio negativo devuelve material: se invierte
-                    // el sentido del movimiento y se conserva cantidad positiva.
-                    $movimiento->execute([0, $op['origen'], 'desperdicio', 'botas', decimalCierreLotes(abs($op['cantidad']))]);
-                } else {
-                    $movimiento->execute([$op['origen'], $destino, $op['tipo'] === 'procesado' ? 'almacenado' : 'desperdicio', decimalCierreLotes(abs($op['cantidad']))]);
-                }
+                // PHP interpreta el signo; la sentencia SQL es la misma en ambos sentidos.
+                $inverso = $op['tipo'] === 'desperdicio' && $op['cantidad'] < 0;
+                $movimiento->execute([
+                    $inverso ? 0 : $op['origen'],
+                    $inverso ? 'desperdicio' : 'botas',
+                    $inverso ? $op['origen'] : $destino,
+                    $inverso ? 'botas' : ($op['tipo'] === 'procesado' ? 'almacenado' : 'desperdicio'),
+                    decimalCierreLotes(abs($op['cantidad'])),
+                ]);
                 continue;
             }
-            // El borrador expresa la cesión de consumo. En a_movimientos el
-            // origen es quien aumenta su consumido y disminuye su restante.
-            $origenMovimiento = $op['destino'];
-            $destinoMovimiento = $op['origen'];
-            $movimiento->execute([$origenMovimiento, $destinoMovimiento, 'botas', decimalCierreLotes($op['cantidad'])]);
+            // El consumo ya se ha auditado en a_ajustes_consumo: no mueve material.
         }
         $consulta->execute($ids);
         $resultado = $consulta->fetchAll(PDO::FETCH_ASSOC);

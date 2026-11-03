@@ -50,6 +50,7 @@ document.addEventListener("DOMContentLoaded", function () {
     prepararEventosFabricacion();
     prepararEventosCierreSemanal?.();
     prepararEventosLotesCierrePhp();
+    prepararEventosEnviarRestanteCierrePhp();
     prepararFiltroConsumoCierrePhp();
     prepararEventosDestino();
     prepararEventosAlmacen();

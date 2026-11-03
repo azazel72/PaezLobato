@@ -3,6 +3,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/../api/cierre_semanal_lotes.php';
 function verificarCierre(bool $ok, string $mensaje): void { if (!$ok) throw new RuntimeException($mensaje); }
 $pdo = fabricacionPdo();
+$ajustesDdl = $pdo->query('SHOW CREATE TABLE a_ajustes_consumo')->fetch(PDO::FETCH_NUM)[1];
+$pdo->exec(preg_replace('/^CREATE TABLE/', 'CREATE TEMPORARY TABLE', $ajustesDdl));
 $ddl = $pdo->query('SHOW CREATE TABLE a_lotes')->fetch(PDO::FETCH_NUM)[1];
 $pdo->exec(preg_replace('/^CREATE TABLE/', 'CREATE TEMPORARY TABLE', $ddl));
 // Usar la estructura desplegada de movimientos, sin tocar la tabla real.
