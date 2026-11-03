@@ -1,8 +1,8 @@
 # Pruebas
 
 Las pruebas están reunidas aquí. Las de Gestión se encuentran en `gestion/`;
-las del terminal y servidor, en la raíz de esta carpeta. Los recursos y utilidades
-manuales de `pruebas/` permanecen en su ubicación original.
+las del terminal y servidor, en la raíz de esta carpeta. También se incluyen aquí
+los recursos, etiquetas de ejemplo y utilidades manuales de impresión.
 
 Ejecutar desde la raíz del proyecto, por ejemplo:
 
