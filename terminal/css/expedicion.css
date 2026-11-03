@@ -191,6 +191,21 @@
     color: #5a347e;
 }
 
+.destino-pedido-card-anonimo .destino-pedido-accion {
+    background: #d5e7f8;
+    border-color: #8cb9de;
+    color: #28567e;
+}
+
+.destino-pedido-card-anonimo .destino-pedido-accion:hover,
+.destino-pedido-card-anonimo .destino-pedido-accion:focus,
+.destino-pedido-card-anonimo .destino-pedido-accion:active {
+    background: #d5e7f8;
+    border-color: #8cb9de;
+    color: #28567e;
+    box-shadow: none;
+}
+
 .destino-pedido-card-cliente .destino-pedido-accion:hover,
 .destino-pedido-card-cliente .destino-pedido-accion:focus,
 .destino-pedido-card-cliente .destino-pedido-accion:active,

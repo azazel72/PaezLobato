@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="./css/paneles-fijos.css?v=20260828a" />
     <link rel="stylesheet" href="./css/ubicacion.css?v=20260828a" />
     <link rel="stylesheet" href="./css/fabricacion.css?v=20261001i" />
-    <link rel="stylesheet" href="./css/expedicion.css?v=20261103a" />
+    <link rel="stylesheet" href="./css/expedicion.css?v=20261103c" />
     <link rel="stylesheet" href="./css/analiticas-envinado.css?v=20260828a" />
     <link rel="stylesheet" href="./css/tema-index-alternativo.css?v=20261009a" />
     <link rel="icon" type="image/png" href="../imagenes/iconos/tonel.png">
@@ -1136,6 +1136,26 @@
             </div>
         </section>
 
+        <div class="modal fade" id="modalMoverBotasPedido" tabindex="-1" aria-labelledby="modalMoverBotasPedidoLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable"><form class="modal-content" id="mover-botas-form">
+                <div class="modal-header"><h5 class="modal-title" id="modalMoverBotasPedidoLabel">Mover botas entre pedidos</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+                <div class="modal-body">
+                    <label class="form-label" for="mover-botas-origen">Pedido origen</label><select class="form-select mb-3" id="mover-botas-origen" required></select>
+                    <label class="form-label" for="mover-botas-destino">Pedido destino</label><select class="form-select mb-3" id="mover-botas-destino" required></select>
+                    <details class="mb-3" id="mover-botas-disponibles-panel">
+                        <summary id="mover-botas-disponibles-total">Botas disponibles</summary>
+                        <div class="list-group mt-2 overflow-auto" id="mover-botas-disponibles" style="max-height:12rem"></div>
+                    </details>
+                    <label class="form-label" for="mover-botas-codigo">Código de bota</label>
+                    <div class="input-group mb-3"><input class="form-control" id="mover-botas-codigo" autocomplete="off"><button type="button" class="btn btn-outline-primary" id="mover-botas-anadir">Añadir</button></div>
+                    <label class="form-label" for="mover-botas-codigos">Códigos a trasladar (uno por línea)</label><textarea class="form-control mb-3" id="mover-botas-codigos" rows="6" required></textarea>
+                    <p class="small text-muted">Solo botas en producción o zona de carga. Se conservan la fabricación y el pedido originales.</p>
+                    <div id="mover-botas-estado" role="status" aria-live="polite"></div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary" id="mover-botas-confirmar">Trasladar botas</button></div>
+            </form></div>
+        </div>
+
         <div class="modal fade" id="modalExpedirDestino" tabindex="-1" aria-labelledby="modalExpedirDestinoLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
@@ -1461,7 +1481,8 @@
     <script src="./js/terminal-cierre-enviar-restante.js?v=20261103d"></script>
     <script src="./js/terminal-cierre-semanal-acciones.js?v=20261103i"></script>
     <script src="./js/terminal-productos-destino.js?v=20260828a"></script>
-    <script src="./js/terminal-destino-resumen.js?v=20261103d"></script>
+    <script src="./js/terminal-destino-resumen.js?v=20261103f"></script>
+    <script src="./js/terminal-mover-botas-pedido.js?v=20261103d"></script>
     <script src="./js/terminal-destino.js?v=20261103a"></script>
     <script src="./js/terminal-almacen.js?v=20260828a"></script>
     <script src="./js/terminal-analiticas.js?v=20260828a"></script>
@@ -1472,7 +1493,7 @@
     <script src="./js/terminal-ambientes.js?v=20260828a"></script>
     <script src="./js/terminal-botas-diarias.js?v=20260828a"></script>
     <script src="./js/terminal-buscar-botas.js?v=20260828a"></script>
-    <script src="./js/terminal.js?v=20261103c"></script>
+    <script src="./js/terminal.js?v=20261103d"></script>
 
 </body>
 

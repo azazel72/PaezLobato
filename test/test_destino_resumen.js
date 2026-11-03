@@ -9,10 +9,11 @@ for (const file of ['terminal-productos-destino.js','terminal-destino-resumen.js
 const group = { pedidoId:0, pedidoNumero:'ANÓNIMO', cliente:'Sin pedido', pedidoDestino:'ANONIMO', solicitadas:null, fabricadas:1, enviadasCliente:0, enviadasEnvinar:0, codigos:['<bota>'], botas:[{codigo:'<bota>',fabricacion_semanal_id:9}] };
 const anonymous = context.renderizarResumenPedidoDestino(group);
 assert.match(anonymous, /destino-pedido-card-anonimo/);
-assert.match(anonymous, /Fabricación 9/);
+assert(!anonymous.includes('Fabricación'), 'Anónimo muestra solo el código como los demás');
 assert.match(anonymous, /&lt;bota&gt;/);
 assert.match(anonymous, /bi-arrow-repeat/);
-assert.match(anonymous, /disabled/);
+assert.match(anonymous, /data-mover-botas-pedido/);
+assert(!anonymous.includes('disabled'));
 assert(!anonymous.includes('destino-pedido-cifras'), 'Anónimo no muestra contadores');
 const normal = context.renderizarResumenPedidoDestino({...group,pedidoId:1,pedidoDestino:'C',solicitadas:10,fabricadas:4,enviadasCliente:2});
 assert.match(normal, /Solicitadas: 10 · Fabricadas: 4 · Expedidas: 2/);

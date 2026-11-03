@@ -39,7 +39,7 @@ function renderizarResumenPedidoDestino(grupo) {
     const destino = String(grupo.pedidoDestino).trim().toUpperCase();
     const clase = !grupo.pedidoId ? 'anonimo' : (['C','CLIENTE'].includes(destino) ? 'cliente' : 'envinado');
     const boton = !grupo.pedidoId
-        ? '<button type="button" class="btn btn-sm destino-pedido-accion" disabled title="Traslado entre pedidos pendiente de implementar" aria-label="Traslado entre pedidos pendiente de implementar"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></button>'
+        ? '<button type="button" class="btn btn-sm destino-pedido-accion" data-mover-botas-pedido="1" title="Mover botas entre pedidos" aria-label="Mover botas entre pedidos"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></button>'
         : (grupo.codigos.length ? renderizarAccionPedidoDestino(grupo) : '');
     const cifras = grupo.pedidoId
         ? `Solicitadas: ${grupo.solicitadas ?? '—'} · Fabricadas: ${grupo.fabricadas} · ${clase === 'cliente' ? `Expedidas: ${grupo.enviadasCliente}` : `Envinadas: ${grupo.envinadas ?? 0}`}`
@@ -49,6 +49,6 @@ function renderizarResumenPedidoDestino(grupo) {
             <div class="destino-pedido-resumen-main"><strong>${escape(grupo.pedidoNumero)}</strong><span>${escape(grupo.cliente || 'Sin cliente')}</span>${cifras ? `<span class="destino-pedido-cifras">${escape(cifras)}</span>` : ''}</div>
             <div class="destino-pedido-resumen-lateral"><div class="destino-pedido-resumen-total">${grupo.codigos.length} botas</div>${boton}</div>
         </summary>
-        <div class="destino-pedido-codigos">${grupo.botas.length ? grupo.botas.map(bota => `<div class="destino-pedido-codigo">${escape(bota.codigo)}${!grupo.pedidoId ? ` <small>· ${bota.fabricacion_semanal_id ? `Fabricación ${Number(bota.fabricacion_semanal_id)}` : 'Sin fabricación vinculada'}</small>` : ''}</div>`).join('') : '<div class="destino-productos-vacio">Sin botas pendientes de destino.</div>'}</div>
+        <div class="destino-pedido-codigos">${grupo.botas.length ? grupo.botas.map(bota => `<div class="destino-pedido-codigo">${escape(bota.codigo)}</div>`).join('') : '<div class="destino-productos-vacio">Sin botas pendientes de destino.</div>'}</div>
     </details>`;
 }

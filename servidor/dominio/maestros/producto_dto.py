@@ -13,6 +13,8 @@ class ProductoDTO(BaseModel):
     ubicacion_id: int | None = None
     contenedor_id: int | None = None
     produccion_id: int | None
+    pedido_id: int = 0
+    pedido_fabricacion_id: int = 0
     estado: int | None = 1
 
     def from_db(producto_db: ProductoDB) -> "ProductoDTO":
@@ -26,6 +28,8 @@ class ProductoDTO(BaseModel):
             ubicacion_id=producto_db.ubicacion_id,
             contenedor_id=producto_db.contenedor_id,
             produccion_id=producto_db.produccion_id,
+            pedido_id=producto_db.pedido_id,
+            pedido_fabricacion_id=producto_db.pedido_fabricacion_id,
             estado=producto_db.estado,
         )
 
@@ -40,5 +44,7 @@ class ProductoDTO(BaseModel):
             ubicacion_id=self.ubicacion_id,
             contenedor_id=self.contenedor_id,
             produccion_id=self.produccion_id,
+            pedido_id=self.pedido_id,
+            pedido_fabricacion_id=self.pedido_fabricacion_id,
             estado=self.estado,
         )

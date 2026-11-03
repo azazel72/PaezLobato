@@ -42,6 +42,7 @@ $datos = ['fabricacion_semanal_id'=>1, 'lotes_botas_ids'=>[2,1], 'lote_fondos_id
     'batidero'=>11, 'operarios_ids'=>[7], 'cantidad_etiquetas'=>2];
 $respuesta = crearBotasFabricacion($pdo, $datos);
 comprobar($respuesta['ok'] && count(array_unique($respuesta['codigos'])) === 2, 'Dos códigos distintos');
+comprobar((int)$pdo->query('SELECT COUNT(*) FROM productos WHERE pedido_id=1 AND pedido_fabricacion_id=1 AND produccion_id=1')->fetchColumn() === 2, 'Fabricación asigna pedido actual y original');
 $fecha = new DateTimeImmutable('now', new DateTimeZone('Europe/Madrid'));
 comprobar($respuesta['codigos'][0] === 'LOTE00010711X'.$fecha->format('ym').'00001', 'Formato de código original');
 comprobar($pdo->query('SELECT consumido FROM a_lotes WHERE id=1')->fetchColumn() === '0.1430', 'Reparto con resto a cuatro decimales');

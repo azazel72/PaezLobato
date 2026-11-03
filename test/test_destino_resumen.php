@@ -20,6 +20,7 @@ $pdo->exec("INSERT INTO productos (id,tipo,codigo,produccion_id,estado,is_delete
     (9,'BOTA','SIN_VINCULO',NULL,2,0),(10,'BOTA','CERRADA',40,1,0),(11,'BOTA','BORRADA',10,1,1)");
 $pdo->exec('INSERT INTO trazabilidad_fabricacion (id,fabricacion_semanal_id,palet_id) VALUES (1,11,1)');
 $pdo->exec('INSERT INTO trazabilidad_producto (trazabilidad_fabricacion_id,producto_id) VALUES (1,8),(1,8)');
+$pdo->exec('UPDATE productos SET pedido_id=CASE WHEN id IN(1,2,3,8,11) THEN 1 WHEN id IN(4,5,6) THEN 2 WHEN id=10 THEN 3 ELSE 0 END, pedido_fabricacion_id=CASE WHEN id IN(1,2,3,8,11) THEN 1 WHEN id IN(4,5,6) THEN 2 WHEN id=10 THEN 3 ELSE 0 END');
 $result = listarResumenDestino($pdo);
 $grupos = array_column($result['pedidos'], null, 'pedidoId');
 comprobarDestino(count($grupos) === 4, 'Pedidos activos y anónimo, sin cerrado');
@@ -30,4 +31,8 @@ comprobarDestino($grupos[2]['envinadas'] === 1, 'Solo estado 4 cuenta como ya en
 comprobarDestino($grupos[0]['fabricadas'] === 2 && count($grupos[0]['codigos']) === 2, 'Anónimo incluye botas sin pedido y sin vínculo');
 comprobarDestino($grupos[0]['botas'][0]['fabricacion_semanal_id'] === 30, 'Se conserva fabricación de origen');
 comprobarDestino($grupos[4]['codigos'] === [], 'Un pedido sin pendientes permanece visible');
+$pdo->exec('UPDATE productos SET pedido_id=2 WHERE id=1');
+$movido=array_column(listarResumenDestino($pdo)['pedidos'],null,'pedidoId');
+comprobarDestino(count($movido[1]['codigos'])===2 && in_array('C1',$movido[2]['codigos'],true),'Destino usa pedido actual y no pedido de la fabricación');
+comprobarDestino((int)$pdo->query('SELECT pedido_fabricacion_id FROM productos WHERE id=1')->fetchColumn()===1,'Pedido original conservado');
 echo "OK: cantidades, estados, anónimo, fabricación de origen y trazabilidad antigua; solo tablas temporales.\n";

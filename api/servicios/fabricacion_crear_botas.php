@@ -128,9 +128,7 @@ function crearBotasFabricacion(PDO $pdo, array $datos): array
         if ($prefijo === '') throw new InvalidArgumentException('El lote no tiene código.');
         $base = $prefijo . sprintf('%02d%02d', $operarios[0] % 100, $batidero) . $separador . $fecha->format('ym');
 
-        $producto = $pdo->prepare("INSERT INTO productos
-            (tipo, codigo, tipo_producto_id, material_id, tostado_id, produccion_id, estado)
-            VALUES ('BOTA', ?, ?, ?, ?, ?, 1)");
+        $producto = $pdo->prepare('CALL pa_crear_producto_bota(?, ?, ?, ?, ?)');
         $operario = $pdo->prepare('INSERT INTO productos_operarios (producto_id, usuario_id, codigo_batidero) VALUES (?, ?, ?)');
         $trazaBota = $pdo->prepare('INSERT INTO a_trazabilidad_botas (id_botas, id_lote_botas, lote, cantidad) VALUES (?, ?, ?, ?)');
         $trazaFondo = $pdo->prepare('INSERT INTO a_trazabilidad_fondos (id_bota, id_lote_fondos, lote, cantidad) VALUES (?, ?, ?, ?)');
@@ -144,7 +142,9 @@ function crearBotasFabricacion(PDO $pdo, array $datos): array
             }
             $codigo = $base . sprintf('%05d', ++$contador);
             $producto->execute([$codigo, $linea['tipo_producto_id'], $linea['material_id'], $linea['tostado_id'], $lineaId]);
-            $productoId = (int) $pdo->lastInsertId();
+            $productoId = (int) $producto->fetchColumn();
+            while ($producto->nextRowset()) { }
+            $producto->closeCursor();
             foreach ($operarios as $id) $operario->execute([$productoId, $id, $batidero]);
             foreach ($lotes as $i => $lote) {
                 $consumirBota->execute([$reparto[$i], $lote['id']]);

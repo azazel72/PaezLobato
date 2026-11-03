@@ -776,7 +776,7 @@ class Colector:
                 linea = lineas_por_id.get(int(producto.produccion_id or 0))
                 if not linea:
                     linea = linea_por_producto_id.get(int(producto.id or 0))
-                pedido = pedidos_por_id.get(int(getattr(linea, "pedido_id", 0) or 0))
+                pedido = pedidos_por_id.get(int(producto.pedido_id or 0))
                 if not pedido:
                     continue
 
@@ -784,11 +784,6 @@ class Colector:
                     continue
                 if pedido_destino and str(pedido.destino or "").strip().upper() != pedido_destino:
                     continue
-
-                if not linea:
-                    lineas_pedido = lineas_por_pedido.get(int(pedido.id or 0), [])
-                    if len(lineas_pedido) == 1:
-                        linea = lineas_pedido[0]
 
                 cliente = clientes_por_id.get(int(pedido.cliente_id or 0))
                 tipo = tipos_por_id.get(int(getattr(linea, "tipo_producto_id", 0) or 0))
@@ -1658,31 +1653,10 @@ class Colector:
             if destinoPedido != "CLIENTE" and destinoPedido != "C":
                 raise ValueError("Solo se pueden expedir pedidos con destino CLIENTE.")
 
-            lineas = session.exec(
-                select(FabricacionSemanalDB).where(FabricacionSemanalDB.pedido_id == pedido_id)
-            ).all()
-            lineas_ids = {int(linea.id) for linea in lineas if linea.id}
-            if not lineas_ids:
-                raise ValueError("El pedido no tiene fabricación semanal.")
-
             productos = session.exec(
-                select(ProductoDB).where(ProductoDB.codigo.in_(codigos_unicos))
+                select(ProductoDB).where(ProductoDB.codigo.in_(codigos_unicos)).with_for_update()
             ).all()
             productos_por_codigo = {str(producto.codigo or "").strip(): producto for producto in productos}
-            trazabilidades_producto = session.exec(
-                select(TrazabilidadProductoDB).where(
-                    TrazabilidadProductoDB.producto_id.in_([int(producto.id) for producto in productos if producto.id])
-                )
-            ).all() if productos else []
-            trazabilidades_fabricacion = session.exec(select(TrazabilidadFabricacionDB)).all()
-            trazabilidades_fabricacion_por_id = {int(traza.id): traza for traza in trazabilidades_fabricacion if traza.id}
-            linea_por_producto_id = {}
-            for traza_producto in trazabilidades_producto:
-                producto_rel_id = int(traza_producto.producto_id or 0)
-                traza_fabricacion = trazabilidades_fabricacion_por_id.get(int(traza_producto.trazabilidad_fabricacion_id or 0))
-                if not producto_rel_id or not traza_fabricacion:
-                    continue
-                linea_por_producto_id[producto_rel_id] = int(traza_fabricacion.fabricacion_semanal_id or 0)
 
             faltantes = [codigo for codigo in codigos_unicos if codigo not in productos_por_codigo]
             if faltantes:
@@ -1691,9 +1665,10 @@ class Colector:
             productos_validos = []
             for codigo in codigos_unicos:
                 producto = productos_por_codigo[codigo]
-                linea_producto_id = int(producto.produccion_id or 0) or int(linea_por_producto_id.get(int(producto.id or 0)) or 0)
-                if linea_producto_id not in lineas_ids:
+                if str(producto.tipo or "").upper() != "BOTA" or int(producto.pedido_id or 0) != pedido_id:
                     raise ValueError(f"El código {codigo} no pertenece al pedido seleccionado.")
+                if int(producto.estado or 0) not in (1, 2):
+                    raise ValueError(f"El código {codigo} ya no está disponible para destino.")
                 productos_validos.append(producto)
 
             contenedor_db = session.exec(
@@ -1769,31 +1744,10 @@ class Colector:
             if not instalacion or tipo_instalacion != "B":
                 raise ValueError("La ubicación seleccionada debe pertenecer a una instalación de tipo B.")
 
-            lineas = session.exec(
-                select(FabricacionSemanalDB).where(FabricacionSemanalDB.pedido_id == pedido_id)
-            ).all()
-            lineas_ids = {int(linea.id) for linea in lineas if linea.id}
-            if not lineas_ids:
-                raise ValueError("El pedido no tiene fabricación semanal.")
-
             productos = session.exec(
-                select(ProductoDB).where(ProductoDB.codigo.in_(codigos_unicos))
+                select(ProductoDB).where(ProductoDB.codigo.in_(codigos_unicos)).with_for_update()
             ).all()
             productos_por_codigo = {str(producto.codigo or "").strip(): producto for producto in productos}
-            trazabilidades_producto = session.exec(
-                select(TrazabilidadProductoDB).where(
-                    TrazabilidadProductoDB.producto_id.in_([int(producto.id) for producto in productos if producto.id])
-                )
-            ).all() if productos else []
-            trazabilidades_fabricacion = session.exec(select(TrazabilidadFabricacionDB)).all()
-            trazabilidades_fabricacion_por_id = {int(traza.id): traza for traza in trazabilidades_fabricacion if traza.id}
-            linea_por_producto_id = {}
-            for traza_producto in trazabilidades_producto:
-                producto_rel_id = int(traza_producto.producto_id or 0)
-                traza_fabricacion = trazabilidades_fabricacion_por_id.get(int(traza_producto.trazabilidad_fabricacion_id or 0))
-                if not producto_rel_id or not traza_fabricacion:
-                    continue
-                linea_por_producto_id[producto_rel_id] = int(traza_fabricacion.fabricacion_semanal_id or 0)
 
             faltantes = [codigo for codigo in codigos_unicos if codigo not in productos_por_codigo]
             if faltantes:
@@ -1802,9 +1756,10 @@ class Colector:
             actualizados = []
             for codigo in codigos_unicos:
                 producto = productos_por_codigo[codigo]
-                linea_producto_id = int(producto.produccion_id or 0) or int(linea_por_producto_id.get(int(producto.id or 0)) or 0)
-                if linea_producto_id not in lineas_ids:
+                if str(producto.tipo or "").upper() != "BOTA" or int(producto.pedido_id or 0) != pedido_id:
                     raise ValueError(f"El código {codigo} no pertenece al pedido seleccionado.")
+                if int(producto.estado or 0) not in (1, 2):
+                    raise ValueError(f"El código {codigo} ya no está disponible para destino.")
                 producto.estado = 3
                 producto.ubicacion_id = ubicacion.id
                 session.add(producto)
@@ -1901,7 +1856,7 @@ class Colector:
             for producto in productos:
                 producto_id = int(producto.id or 0)
                 linea = lineas_por_id.get(int(producto.produccion_id or 0) or linea_por_producto_id.get(producto_id, 0))
-                pedido = pedidos_por_id.get(int(getattr(linea, "pedido_id", 0) or 0))
+                pedido = pedidos_por_id.get(int(producto.pedido_id or 0))
                 cliente = clientes_por_id.get(int(getattr(pedido, "cliente_id", 0) or 0))
                 ubicacion = ubicaciones_por_id.get(int(producto.ubicacion_id or 0))
                 instalacion = instalaciones_por_id.get(int(getattr(ubicacion, "instalacion_id", 0) or 0))
