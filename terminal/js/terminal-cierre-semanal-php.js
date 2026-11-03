@@ -20,7 +20,15 @@ function configurarVistaCierreSemanalPhp(activo) {
     }
     if (codigos) codigos.hidden = activo;
     const titulo = document.getElementById("cierre-semanal-lotes-titulo");
-    if (titulo) titulo.textContent = activo ? "Lotes de botas" : "Palets y lotes consumidos";
+    if (titulo) titulo.textContent = activo ? "Lotes en fabricación" : "Palets y lotes consumidos";
+    const filtro = document.getElementById("cierre-semanal-filtro-consumo");
+    if (filtro) filtro.hidden = !activo;
+}
+
+function prepararFiltroConsumoCierrePhp() {
+    document.getElementById("cierre-semanal-solo-consumo")?.addEventListener("change", () => {
+        if (cierreSemanalPhp.activo) pintarLotesCierrePhp();
+    });
 }
 
 function elementoCierrePhp(etiqueta, clase, texto) {
@@ -122,20 +130,22 @@ function pintarFabricacionesCierrePhp() {
 function pintarLotesCierrePhp() {
     const lista = document.getElementById("cierre-semanal-lotes");
     const resumen = document.getElementById("cierre-semanal-lotes-resumen");
-    if (resumen) resumen.textContent = `${cierreSemanalPhp.lotes.length} lotes`;
+    const soloConConsumo = document.getElementById("cierre-semanal-solo-consumo")?.checked;
+    const lotes = cierreSemanalPhp.lotes.filter(lote => !soloConConsumo || Number(lote.consumido || 0) > 0);
+    if (resumen) resumen.textContent = `${lotes.length} lotes`;
     if (!lista) return;
     lista.replaceChildren();
-    if (!cierreSemanalPhp.lotes.length) {
-        lista.appendChild(elementoCierrePhp("div", "cierre-semanal-empty", "No hay lotes de botas."));
+    if (!lotes.length) {
+        lista.appendChild(elementoCierrePhp("div", "cierre-semanal-empty", soloConConsumo ? "No hay lotes con consumo." : "No hay lotes en fabricación."));
     }
-    // Sin filtrar por estado, selección, fabricación, stock restante o trazas.
-    cierreSemanalPhp.lotes.forEach(lote => {
+    // El filtro solo afecta a la presentación; el borrador conserva todos los lotes.
+    lotes.forEach(lote => {
         const restante = Number(lote.cubicaje || 0) - Number(lote.consumido || 0);
         const tarjeta = elementoCierrePhp("article", "cierre-semanal-lote");
         tarjeta.dataset.loteId = String(lote.id);
         tarjeta.classList.toggle("cierre-semanal-lote-negativo", restante < 0);
         tarjeta.classList.toggle("cierre-semanal-lote-positivo", restante > 0);
-        tarjeta.appendChild(elementoCierrePhp("div", "cierre-semanal-lote-titulo", `Lote ${lote.codigo || "-"}`));
+        tarjeta.appendChild(elementoCierrePhp("div", "cierre-semanal-lote-titulo", `Lote ${lote.codigo || "-"} · ${lote.tipo_descripcion || "Sin definir"}`));
         const datos = elementoCierrePhp("div", "cierre-semanal-lote-grid");
         [
             `M3 original: ${formatearNumeroFabricacion(lote.cubicaje)}`,

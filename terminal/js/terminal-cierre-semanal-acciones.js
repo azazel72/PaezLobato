@@ -87,16 +87,37 @@ function aplicarSalidaLoteCierrePhp(tipo, id, valor, codigo = "", ubicacionId = 
     borradorLotesCierrePhp.operaciones.push({ tipo, origen_id: Number(lote.id), cantidad: decimalLoteCierre(cantidad), ...(tipo === "procesado" ? { codigo_destino: codigo, ubicacion_id: ubicacion } : {}) });
 }
 
+function etiquetaLoteComboCierrePhp(lote) {
+    const restante = unidadesLoteCierre(lote.cubicaje) - unidadesLoteCierre(lote.consumido);
+    return `${lote.codigo} · ${lote.tipo_descripcion || 'Sin definir'} · Restante: ${decimalLoteCierreConSigno(restante)} m³`;
+}
+
+function lotesProcesadoVirtualesCierrePhp() {
+    const lotes = cierreSemanalPhp.opcionesProcesado.lotes.map(lote => ({ ...lote }));
+    for (const op of borradorLotesCierrePhp.operaciones) {
+        if (op.tipo !== 'procesado') continue;
+        let destino = lotes.find(lote => lote.codigo === op.codigo_destino && Number(lote.ubicacion_id) === Number(op.ubicacion_id));
+        if (!destino) {
+            const origen = cierreSemanalPhp.lotes.find(lote => Number(lote.id) === Number(op.origen_id));
+            destino = { codigo: op.codigo_destino, ubicacion_id: op.ubicacion_id, tipo_descripcion: origen?.tipo_descripcion, cubicaje: '0.0000', consumido: '0.0000' };
+            lotes.push(destino);
+        }
+        destino.cubicaje = decimalLoteCierre(unidadesLoteCierre(destino.cubicaje) + unidadesLoteCierre(op.cantidad));
+    }
+    return lotes;
+}
+
 function rellenarLotesProcesadoPorUbicacion(select, input) {
     const ubicacionId = Number(select?.value || 0);
     const datalist = input ? document.getElementById(input.getAttribute("list")) : null;
     if (!datalist) return;
     datalist.replaceChildren();
-    cierreSemanalPhp.opcionesProcesado.lotes
+    lotesProcesadoVirtualesCierrePhp()
         .filter(lote => !ubicacionId || Number(lote.ubicacion_id || 0) === ubicacionId)
         .forEach(lote => {
-            const opcion = elementoCierrePhp("option", "", `${lote.codigo} (ALMACENADO)`);
+            const opcion = elementoCierrePhp("option", "", etiquetaLoteComboCierrePhp(lote));
             opcion.value = lote.codigo;
+            opcion.label = etiquetaLoteComboCierrePhp(lote);
             datalist.appendChild(opcion);
         });
 }
@@ -117,7 +138,7 @@ function crearAccionesLoteCierrePhp(lote) {
         // La lista ya está en memoria: ninguna consulta por tarjeta o selector.
         for (const destino of cierreSemanalPhp.lotes) {
             if (Number(destino.id) === Number(lote.id)) continue;
-            const opcion = elementoCierrePhp("option", "", destino.codigo);
+            const opcion = elementoCierrePhp("option", "", etiquetaLoteComboCierrePhp(destino));
             opcion.value = String(destino.id);
             selector.appendChild(opcion);
         }
@@ -278,10 +299,15 @@ async function confirmarLotesCierrePhp() {
         const datos = await respuesta.json();
         console.info("[php] POST respuesta", url, datos);
         if (!respuesta.ok || !datos.ok || !Array.isArray(datos.lotes)) throw new Error(datos.error || "No se pudieron guardar los cambios.");
-        const recarga = await GET("../api/terminal/lotes_botas.php");
+        const [recarga, opciones] = await Promise.all([
+            GET("../api/terminal/lotes_botas.php"),
+            GET("../api/terminal/opciones_procesado.php"),
+        ]);
         if (!recarga?.ok || !Array.isArray(recarga.lotes)) {
             throw new Error("Los cambios se guardaron, pero no se pudo recargar la lista de lotes.");
         }
+        if (!opciones?.ok || !Array.isArray(opciones.lotes)) throw new Error("Los cambios se guardaron, pero no se pudieron recargar los lotes de procesado.");
+        cierreSemanalPhp.opcionesProcesado = { ubicaciones: opciones.ubicaciones || [], lotes: opciones.lotes };
         iniciarBorradorLotesCierrePhp(recarga.lotes);
         console.info("[cierre-semanal PHP] cambios confirmados", datos);
     } catch (error) {

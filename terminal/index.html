@@ -1011,7 +1011,13 @@
                 <div class="panel-fijo-body cierre-semanal-body">
                     <div class="cierre-semanal-bloque">
                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
-                            <h6 class="cierre-semanal-bloque-titulo mb-0" id="cierre-semanal-lotes-titulo">Lotes de botas</h6>
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <h6 class="cierre-semanal-bloque-titulo mb-0" id="cierre-semanal-lotes-titulo">Lotes en fabricación</h6>
+                                <div class="form-check form-switch mb-0" id="cierre-semanal-filtro-consumo">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="cierre-semanal-solo-consumo" checked>
+                                    <label class="form-check-label small" for="cierre-semanal-solo-consumo">Ocultar sin consumo</label>
+                                </div>
+                            </div>
                             <span class="small text-muted" id="cierre-semanal-lotes-resumen"></span>
                         </div>
                         <div class="cierre-semanal-lotes-lista" id="cierre-semanal-lotes">
@@ -1441,12 +1447,12 @@
     <script src="./js/terminal-recepcion.js?v=20260828a"></script>
     <script src="./js/terminal-consumo.js?v=20261001c"></script>
     <script src="./js/terminal-consumo-lotes.js?v=20261013b"></script>
-    <script src="./js/terminal-fabricacion.js?v=20261001n"></script>
+    <script src="./js/terminal-fabricacion.js?v=20261103b"></script>
     <script src="./js/terminal-fabricacion-impresion.js?v=20261001c"></script>
     <script src="./js/terminal-fondos.js?v=20261001a"></script>
     <script src="./js/terminal-cierre-semanal.js?v=20261001d"></script>
-    <script src="./js/terminal-cierre-semanal-php.js?v=20261001d"></script>
-    <script src="./js/terminal-cierre-semanal-acciones.js?v=20261013a"></script>
+    <script src="./js/terminal-cierre-semanal-php.js?v=20261103c"></script>
+    <script src="./js/terminal-cierre-semanal-acciones.js?v=20261103c"></script>
     <script src="./js/terminal-productos-destino.js?v=20260828a"></script>
     <script src="./js/terminal-destino.js?v=20260828a"></script>
     <script src="./js/terminal-almacen.js?v=20260828a"></script>
@@ -1458,7 +1464,7 @@
     <script src="./js/terminal-ambientes.js?v=20260828a"></script>
     <script src="./js/terminal-botas-diarias.js?v=20260828a"></script>
     <script src="./js/terminal-buscar-botas.js?v=20260828a"></script>
-    <script src="./js/terminal.js?v=20261013a"></script>
+    <script src="./js/terminal.js?v=20261103a"></script>
 
 </body>
 

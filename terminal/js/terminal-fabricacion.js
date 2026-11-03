@@ -295,10 +295,11 @@ function pintarLotesBotasDesdePhp() {
         tarjeta.dataset.loteId = String(lote.id || "");
         tarjeta.dataset.estado = String(lote.estado || 0);
         tarjeta.innerHTML = `
-            <div class="bota-lote-titulo">${lote.codigo || "-"}</div>
+            <div class="bota-lote-titulo"></div>
             <div class="bota-lote-detalle">M3: ${formatearNumeroFabricacion(lote.cubicaje)} - ${formatearNumeroFabricacion(lote.consumido)} = ${formatearNumeroFabricacion(restante)}</div>
             <div class="bota-lote-detalle">Botas: ${Number(lote.contador_botas || 0)}</div>
         `;
+        tarjeta.querySelector('.bota-lote-titulo').textContent = `${lote.codigo || '-'} · ${lote.tipo_descripcion || 'Sin definir'}`;
         lista.appendChild(tarjeta);
     });
 }

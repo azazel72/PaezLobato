@@ -9,7 +9,9 @@ END$$
 DROP PROCEDURE IF EXISTS pa_obtener_lotes_botas$$
 CREATE PROCEDURE pa_obtener_lotes_botas()
 BEGIN
- SELECT id,codigo,objetivo,tipo_producto_id,material_id,cubicaje,consumido,contador_botas,estado,ubicacion_id,created_at,updated_at FROM a_lotes WHERE objetivo='BOTAS' AND estado<2 AND is_deleted=0 ORDER BY codigo;
+ SELECT l.id,l.codigo,l.objetivo,l.tipo_producto_id,l.material_id,l.cubicaje,l.consumido,l.contador_botas,l.estado,l.ubicacion_id,l.created_at,l.updated_at,COALESCE(tp.descripcion,'') AS tipo_descripcion
+ FROM a_lotes l LEFT JOIN tipos_producto tp ON tp.id=l.tipo_producto_id
+ WHERE l.objetivo='BOTAS' AND l.estado<2 AND l.is_deleted=0 ORDER BY l.codigo;
 END$$
 DROP PROCEDURE IF EXISTS pa_obtener_lotes_fondos$$
 CREATE PROCEDURE pa_obtener_lotes_fondos()

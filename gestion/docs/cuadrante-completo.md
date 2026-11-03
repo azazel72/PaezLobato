@@ -40,7 +40,7 @@ de cada cabecera (Puesto y días). También admiten flechas izquierda/derecha al
 enfocar el tirador con Tab. Funcionan con el candado cerrado y se conservan al
 actualizar o cambiar de semana mientras la ventana siga abierta. Las columnas
 ampliadas permiten desplazamiento horizontal sin comprimir las demás.
-`node gestion/tests/cuadrante-anchuras.cjs` verifica el ajuste y sus límites.
+`node test/gestion/cuadrante-anchuras.cjs` verifica el ajuste y sus límites.
 
 CSV e impresion/PDF siguen disponibles, igual que las preferencias y las acciones
 de clonado, extension y limpieza. El candado solo controla el arrastre directo.
@@ -52,7 +52,7 @@ de clonado, extension y limpieza. El candado solo controla el arrastre directo.
 - `gestion/js/cuadrante-completo-modelo.js`: fechas, orden, cobertura y exportación segura.
 - `gestion/js/cuadrante-completo.js`: interfaz, arrastre, formularios e impresión.
 - `gestion/api/cuadrante-completo.php`: operaciones incrementales sobre la planificación.
-- `gestion/tests/cuadrante-completo.php` y `.cjs`: pruebas de operaciones y modelo.
+- `test/gestion/cuadrante-completo.php` y `.cjs`: pruebas de operaciones y modelo.
 
 La entrada sigue siendo `gestion/api/router.php?resource=cuadrantes`.
 GET recibe `fecha`; POST recibe `inicio`, `version` y una acción: `assign`,
@@ -64,8 +64,8 @@ no requiere cambiar el esquema ni su versión.
 Ejecutar desde la raíz del repositorio:
 
 ```powershell
-node gestion/tests/cuadrante-completo.cjs
-C:\xampp\php\php.exe gestion/tests/cuadrante-completo.php
+node test/gestion/cuadrante-completo.cjs
+C:\xampp\php\php.exe test/gestion/cuadrante-completo.php
 ```
 
 Las pruebas PHP escriben exclusivamente en tablas TEMPORARY de su conexión.

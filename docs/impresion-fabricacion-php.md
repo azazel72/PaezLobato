@@ -50,9 +50,9 @@ fabricación ya no se acepta en Python.
 
 Validaciones focalizadas, sin imprimir etiquetas reales:
 
-- `C:/xampp/php/php.exe pruebas/test_fabricacion_php.php`: tablas temporales
+- `C:/xampp/php/php.exe test/test_fabricacion_php.php`: tablas temporales
   con el esquema real, descuentos, trazas, contadores y rollback.
-- `node pruebas/test_fabricacion_impresion.js`: orden PHP/impresora, fallos y reintentos.
-- `python -B pruebas/test_impresion_codigos.py`: contrato Python con impresora simulada.
+- `node test/test_fabricacion_impresion.js`: orden PHP/impresora, fallos y reintentos.
+- `python -B test/test_impresion_codigos.py`: contrato Python con impresora simulada.
 
 El breadcrumb escribe `[breadcrumb] clic` con texto, destino y pantalla de origen.

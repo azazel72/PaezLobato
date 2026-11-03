@@ -50,5 +50,5 @@ migración sobre la BBDD existente.
 
 Pruebas focalizadas:
 
-- `node pruebas/test_cierre_lotes.js`
-- `C:/xampp/php/php.exe pruebas/test_cierre_lotes.php` (solo tablas temporales).
+- `node test/test_cierre_lotes.js`
+- `C:/xampp/php/php.exe test/test_cierre_lotes.php` (solo tablas temporales).
